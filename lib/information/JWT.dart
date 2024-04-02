@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vocabulingo/main.dart';
+import 'package:vocabulingo/src/configuration.dart';
 class JWT extends StatelessWidget {
   const JWT({super.key});
 

@@ -1,13 +1,14 @@
 import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:vocabulingo/duolingoLogin.dart';
 import 'package:vocabulingo/src/icons/my_flutter_app_icons.dart' as CustomIcons;
 import 'package:vocabulingo/googleLogin.dart';
-import 'package:http/http.dart' as http;
 import 'dart:io';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:vocabulingo/src/configuration.dart';
+
 class MyHttpOverrides extends HttpOverrides{
   @override
   HttpClient createHttpClient(SecurityContext? context){
@@ -15,16 +16,30 @@ class MyHttpOverrides extends HttpOverrides{
       ..badCertificateCallback = (X509Certificate cert, String host, int port)=> true;
   }
 }
-Color appPrimaryColor = Colors.greenAccent.shade700;
-Color appSecondaryColor = Colors.blueAccent.shade100;
-void main() {
+
+
+void main() async{
+  //http
   HttpOverrides.global = MyHttpOverrides();
+  //hive
+  await Hive.initFlutter();
+  await Hive.openBox('settings');
+  //app
   runApp(
     ChangeNotifierProvider(
       create: (context) => AppState(),
       child: const MyApp(),
     ),
   );
+}
+
+Future<String?> readHive(String key) async{
+  var _settingsBox = Hive.box('settings');
+  return _settingsBox.get(key);
+}
+void writeHive(String key, String value) async{
+  var _settingsBox = Hive.box('settings');
+  await _settingsBox.put(key, value);
 }
 
 class AppState extends ChangeNotifier {
@@ -79,23 +94,18 @@ class MyApp extends StatelessWidget {
 }
 
 Future<bool> isFirstOpen() async {
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
-  final bool? firstOpen = prefs.getBool('firstOpen');
-  final String? jwt = prefs.getString('jwt_aes');
-  final String? username = prefs.getString('username_aes');
-  if (firstOpen == null || jwt == null || username == null) {
+  if (await readHive("firstOpen") == null || await readHive("username") == null || await readHive("jwt") == null) {
     return true;
   }
-  return false;
+  var username = await readHive("username").then((value) => value.toString());
+  var jwt = await readHive("jwt").then((value) => value.toString());
+  if (await checkDuolingoCredentials(username,jwt)) {
+    return false;
+  }
+  return true;
 }
 
-AppBar defaultAppBar() {
-  return AppBar(
-    title: const Text("Vocabulingo"),
-    backgroundColor: appPrimaryColor,
-    centerTitle: true,
-  );
-}
+
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -143,7 +153,7 @@ class _FirstOpenState extends State<FirstOpen> {
                 });
 
               },
-              icon: Icon(CustomIcons.MyFlutterApp.duolingo_bird),
+              icon: const Icon(CustomIcons.MyFlutterApp.duolingo_bird),
               label: const Text("Log in with Duolingo")),
           ElevatedButton.icon(
               onPressed: () {
@@ -151,7 +161,7 @@ class _FirstOpenState extends State<FirstOpen> {
                   Navigator.push(context, MaterialPageRoute(builder: (context) => const GoogleLogin()));
                 });
               },
-              icon: Icon(CustomIcons.MyFlutterApp.google),
+              icon: const Icon(CustomIcons.MyFlutterApp.google),
               label: const Text("Log in with Google"))
         ],
       ),

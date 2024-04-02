@@ -2,13 +2,13 @@ import 'dart:convert';
 import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:vocabulingo/JWT.dart';
+import 'package:vocabulingo/information/JWT.dart';
 import 'package:vocabulingo/main.dart';
 import 'package:vocabulingo/src/icons/my_flutter_app_icons.dart' as CustomIcons;
-import 'package:vocabulingo/dataStorageInformation.dart';
+import 'package:vocabulingo/information/dataStorageInformation.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import 'package:vocabulingo/src/configuration.dart';
 
 class DuolingoLogin extends StatefulWidget {
   DuolingoLogin({super.key});
@@ -17,8 +17,7 @@ class DuolingoLogin extends StatefulWidget {
   State<DuolingoLogin> createState() => _DuolingoLoginState();
 }
 
-Future<bool> checkCredentials(String username, String jwt) async {
-  print("Checking");
+Future<bool> checkDuolingoCredentials(String username, String jwt) async {
   var body = jsonEncode({
     "user": username,
     "jwt": jwt
@@ -37,18 +36,24 @@ Future<bool> checkCredentials(String username, String jwt) async {
 }
 
 class _DuolingoLoginState extends State<DuolingoLogin> {
-  final usernameController = TextEditingController();
-  final passwordController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   @override
   void dispose() {
-    usernameController.dispose();
-    passwordController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    void loginSuccess(String username, String jwt) {
+      writeHive("firstOpen", "false");
+      writeHive("username", username);
+      writeHive("jwt", jwt);
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const Home()));
+    }
     double screenHeight = MediaQuery
         .of(context)
         .size
@@ -74,40 +79,46 @@ class _DuolingoLoginState extends State<DuolingoLogin> {
                   ],
                 ),
                 SizedBox(height: screenHeight * 0.1),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        decoration: const InputDecoration(
-                            hintText: "Enter your duolingo Username",
-                            labelText: "Username",
-                            border: UnderlineInputBorder(
-                              borderRadius:
-                              BorderRadius.all(Radius.circular(4)),
-                            )),
-                        controller: usernameController,
+                Container(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          decoration: const InputDecoration(
+                              hintText: "Enter your duolingo Username",
+                              labelText: "Username",
+                              border: UnderlineInputBorder(
+                                borderRadius:
+                                BorderRadius.all(Radius.circular(4)),
+                              )),
+                          controller: _usernameController,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 SizedBox(height: screenHeight * 0.05),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        decoration: const InputDecoration(
-                            hintText: "Enter your JW Token",
-                            labelText: "Json Web Token",
-                            border: UnderlineInputBorder(
-                              borderRadius:
-                              BorderRadius.all(Radius.circular(12)),
-                            )),
-                        controller: passwordController,
+                Container(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          decoration: const InputDecoration(
+                              hintText: "Enter your JW Token",
+                              labelText: "Json Web Token",
+                              border: UnderlineInputBorder(
+                                borderRadius:
+                                BorderRadius.all(Radius.circular(12)),
+                              )),
+                          controller: _passwordController,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -128,10 +139,12 @@ class _DuolingoLoginState extends State<DuolingoLogin> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     InkWell(
-                      child: Text(
-                          "I have read and accepted these terms. (How we store this data)",
-                          style: TextStyle(
-                              height: 10, color: Colors.orange.shade300)),
+                      child: Container(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Text(
+                            "I have read and accepted these terms. (How we store this data)",
+                            style: TextStyle(color: Colors.orange.shade300)),
+                      ),
                       onTap: () {
                         Navigator.push(
                             context,
@@ -145,13 +158,13 @@ class _DuolingoLoginState extends State<DuolingoLogin> {
                 SizedBox(height: screenHeight * 0.15),
                 FloatingActionButton(
                   onPressed: () {
-                    if (!usernameController.text.isEmpty &&
-                        !passwordController.text.isEmpty) {
-                      checkCredentials(
-                          usernameController.text, passwordController.text)
+                    if (_usernameController.text.isNotEmpty &&
+                        _passwordController.text.isNotEmpty) {
+                      checkDuolingoCredentials(
+                          _usernameController.text, _passwordController.text)
                           .then((value) {
                         if (value) {
-                          print("Passed");
+                          loginSuccess(_usernameController.text, _passwordController.text);
                         } else {
                           showDialog(
                               context: context,
