@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:vocabulingo/duolingoLogin.dart';
+import 'package:vocabulingo/main.dart';
 import 'package:vocabulingo/src/icons/my_flutter_app_icons.dart' as CustomIcons;
 import 'package:vocabulingo/googleLogin.dart';
 import 'dart:io';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:vocabulingo/src/configuration.dart';
-
+import 'package:vocabulingo/home.dart';
 class MyHttpOverrides extends HttpOverrides{
   @override
   HttpClient createHttpClient(SecurityContext? context){
@@ -33,7 +34,11 @@ void main() async{
   );
 }
 
-Future<String?> readHive(String key) async{
+Future<String> _readHive(String key) async{
+  var _settingsBox = Hive.box('settings');
+  return _settingsBox.get(key);
+}
+String readHive(String key) {
   var _settingsBox = Hive.box('settings');
   return _settingsBox.get(key);
 }
@@ -85,7 +90,7 @@ class MyApp extends StatelessWidget {
                 debugShowCheckedModeBanner: false,
                 darkTheme: ThemeData.dark(useMaterial3: true),
                 theme: apptheme,
-                home: isFirstOpen ? const FirstOpen() : const Home(),
+                home: isFirstOpen ? const FirstOpen() : Home(),
               );
             }
           },
@@ -94,11 +99,11 @@ class MyApp extends StatelessWidget {
 }
 
 Future<bool> isFirstOpen() async {
-  if (await readHive("firstOpen") == null || await readHive("username") == null || await readHive("jwt") == null) {
+  if (await _readHive("firstOpen") == "null" || await _readHive("username") == "null" || await _readHive("jwt") == "null") {
     return true;
   }
-  var username = await readHive("username").then((value) => value.toString());
-  var jwt = await readHive("jwt").then((value) => value.toString());
+  var username = await _readHive("username").then((value) => value.toString());
+  var jwt = await _readHive("jwt").then((value) => value.toString());
   if (await checkDuolingoCredentials(username,jwt)) {
     return false;
   }
@@ -107,25 +112,7 @@ Future<bool> isFirstOpen() async {
 
 
 
-class Home extends StatefulWidget {
-  const Home({super.key});
 
-  @override
-  _HomeState createState() => _HomeState();
-}
-
-class _HomeState extends State<Home> {
-  late AppState appState;
-
-  @override
-  Widget build(BuildContext context) {
-    appState = Provider.of<AppState>(context, listen: false);
-    return Scaffold(
-      appBar: defaultAppBar(),
-      body: const Text('Home'),
-    );
-  }
-}
 
 class FirstOpen extends StatefulWidget {
   const FirstOpen({super.key});

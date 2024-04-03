@@ -9,7 +9,7 @@ import 'package:vocabulingo/information/dataStorageInformation.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:vocabulingo/src/configuration.dart';
-
+import 'package:vocabulingo/home.dart';
 class DuolingoLogin extends StatefulWidget {
   DuolingoLogin({super.key});
 
@@ -52,7 +52,7 @@ class _DuolingoLoginState extends State<DuolingoLogin> {
       writeHive("firstOpen", "false");
       writeHive("username", username);
       writeHive("jwt", jwt);
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const Home()));
+      Navigator.push(context, MaterialPageRoute(builder: (context) => Home()));
     }
     double screenHeight = MediaQuery
         .of(context)

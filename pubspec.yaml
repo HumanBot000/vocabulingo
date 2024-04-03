@@ -42,6 +42,7 @@ dependencies:
   intl: ^0.18.0
   hive: ^2.2.3
   hive_flutter: ^1.1.0
+  flutter_svg: ^2.0.5
 
 
 dev_dependencies:
@@ -67,3 +68,29 @@ flutter:
    - family:  MyFlutterApp
      fonts:
       - asset: src/fonts/MyFlutterApp.ttf
+  assets:
+    - lib/src/svg/ae.svg
+    - lib/src/svg/cn.svg
+    - lib/src/svg/cz.svg
+    - lib/src/svg/dk.svg
+    - lib/src/svg/es.svg
+    - lib/src/svg/fr.svg
+    - lib/src/svg/gr.svg
+    - lib/src/svg/gb-wls.svg
+    - lib/src/svg/it.svg
+    - lib/src/svg/nl.svg
+    - lib/src/svg/ie.svg
+    - lib/src/svg/il.svg
+    - lib/src/svg/in.svg
+    - lib/src/svg/jp.svg
+    - lib/src/svg/kr.svg
+    - lib/src/svg/no.svg
+    - lib/src/svg/pl.svg
+    - lib/src/svg/pt.svg
+    - lib/src/svg/ru.svg
+    - lib/src/svg/se.svg
+    - lib/src/svg/tr.svg
+    - lib/src/svg/ua.svg
+    - lib/src/svg/us.svg
+    - lib/src/svg/vn.svg
+    - lib/src/svg/xx.svg
