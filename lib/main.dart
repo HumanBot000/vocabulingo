@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:vocabulingo/duolingoLogin.dart';
 import 'package:vocabulingo/main.dart';
+import 'package:vocabulingo/languageSelector.dart';
 import 'package:vocabulingo/src/icons/my_flutter_app_icons.dart' as CustomIcons;
 import 'package:vocabulingo/googleLogin.dart';
 import 'dart:io';
@@ -36,11 +37,11 @@ void main() async{
 
 Future<String> _readHive(String key) async{
   var _settingsBox = Hive.box('settings');
-  return _settingsBox.get(key);
+  return _settingsBox.get(key) is String ? _settingsBox.get(key) : "null";
 }
 String readHive(String key) {
   var _settingsBox = Hive.box('settings');
-  return _settingsBox.get(key);
+  return _settingsBox.get(key) is String ? _settingsBox.get(key) : "null";
 }
 void writeHive(String key, String value) async{
   var _settingsBox = Hive.box('settings');
@@ -78,7 +79,7 @@ class MyApp extends StatelessWidget {
                 },
               );
             } else if (snapshot.hasError) {
-              return const Text('Error');
+              return Container(padding: EdgeInsets.all(40),child: Text(snapshot.error.toString()));
             } else {
               final isFirstOpen = snapshot.data!;
               ThemeData apptheme = ThemeData(
@@ -90,7 +91,7 @@ class MyApp extends StatelessWidget {
                 debugShowCheckedModeBanner: false,
                 darkTheme: ThemeData.dark(useMaterial3: true),
                 theme: apptheme,
-                home: isFirstOpen ? const FirstOpen() : Home(),
+                home: isFirstOpen ? const FirstOpen() : readHive("selectedLanguage") == "null" ? const LanguageSelector() : const Home(),
               );
             }
           },
