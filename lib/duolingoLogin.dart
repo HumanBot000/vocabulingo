@@ -20,7 +20,7 @@ class DuolingoLogin extends StatefulWidget {
 Future<bool> checkDuolingoCredentials(String username, String jwt) async {
   var body = jsonEncode({
     "user": username,
-    "jwt": jwt
+    "jwt": jwt //todo change backend so no jwt needs to be provided. I don't know if this is a good idea because of rate-limits. But I also know most people won't look for their jwt
   });
   var response = await http
       .post(

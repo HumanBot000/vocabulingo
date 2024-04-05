@@ -91,7 +91,7 @@ class MyApp extends StatelessWidget {
                 debugShowCheckedModeBanner: false,
                 darkTheme: ThemeData.dark(useMaterial3: true),
                 theme: apptheme,
-                home: isFirstOpen ? const FirstOpen() : readHive("selectedLanguage") == "null" ? const LanguageSelector() : const Home(),
+                home: isFirstOpen ? const FirstOpen() : readHive("activeLanguage") == "null" ? const LanguageSelector() : const Home(),
               );
             }
           },

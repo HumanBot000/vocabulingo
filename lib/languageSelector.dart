@@ -3,7 +3,7 @@ import 'dart:ffi';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:provider/provider.dart';
+import 'package:vocabulingo/home.dart';
 import 'package:vocabulingo/main.dart';
 import 'package:vocabulingo/src/configuration.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -16,7 +16,10 @@ class LanguageSelector extends StatefulWidget {
   State<LanguageSelector> createState() => _LanguageSelectorState();
 }
 
-
+void setLanguage(String language,context) {
+  writeHive("activeLanguage", language);
+  Navigator.push(context, MaterialPageRoute(builder: (context) =>  const Home()));
+}
 class _LanguageSelectorState extends State<LanguageSelector> {
   bool _isSupported(String language) {
     List<String> supportedLanguages = [
@@ -63,12 +66,15 @@ class _LanguageSelectorState extends State<LanguageSelector> {
       "Accept": "application/json",
       "content-type": "application/json"
     });
+    if (response.statusCode == 401){
+      throw "unauthorized";
+    }
     List<String> languages = json.decode(response.body)[0].cast<String>();
     List<String> fullName = json.decode(response.body)[1].cast<String>();
     List<Widget> children = [];
     for (String language in languages) {
       children.add(
-        ElevatedButton.icon(onPressed: () {},
+        ElevatedButton.icon(onPressed: () {setLanguage(language,context);},
           icon: _isSupported(language) ? SvgPicture.asset(
               "lib/src/svg/${language}.svg", height: 20, width: 20) : SvgPicture.asset(height: 20,width: 20,
               "lib/src/svg/xx.svg"),
