@@ -26,6 +26,7 @@ void main() async{
   //hive
   await Hive.initFlutter();
   await Hive.openBox('settings');
+  await Hive.openBox('topics');
   //app
   runApp(
     ChangeNotifierProvider(

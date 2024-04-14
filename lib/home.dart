@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:vocabulingo/main.dart';
 import 'package:vocabulingo/src/configuration.dart';
@@ -14,8 +15,40 @@ class Home extends StatefulWidget {
   @override
   State<Home> createState() => _HomeState();
 }
-
-Future<List<Widget>> getTopicButtons() async {
+List<dynamic> getAllTopics() {
+  var box = Hive.box('topics');
+  if (box.isEmpty) {
+    addTopic("All");
+  }
+  return box.keys.toList();
+}
+void addTopic(String topicName) {
+  var box = Hive.box('topics');
+  box.put(topicName, []);
+}
+void addVocabularies(String topicName, List<String> vocabularies) {
+  var box = Hive.box('topics');
+  for (String vocabulary in vocabularies) {
+    List<String> list = box.get(topicName);
+    list.add(vocabulary);
+    box.delete(topicName);
+    box.put(topicName, list);
+  }
+}
+List<Widget> getTopicButtons() {
+  List knownTopics = getAllTopics();
+  List<Widget> children = [];
+  for (String topic in knownTopics) {
+    children.add(
+        ElevatedButton(onPressed: () {},
+          child: Text(
+              topic, style: TextStyle(color: Colors.black, fontSize: 20)),
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.white),)
+    );
+  }
+  return children;
+}
+Future<List<Widget>> getOfficialTopicButtons() async {
   var username = readHive("username");
   var jwt = readHive("jwt");
   var body = jsonEncode({
@@ -84,28 +117,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       body: <Widget>[
 
         /// Vocabularies page
-        FutureBuilder<List<Widget>>(
-          future: getTopicButtons(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return SpinKitFadingCircle(
-                itemBuilder: (BuildContext context, int index) {
-                  return DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: index.isEven ? appPrimaryColor : appSecondaryColor,
-                      shape: BoxShape.circle,
-                    ),
-                  );
-                },
-              );
-            } else if (snapshot.hasError) {
-              print(snapshot.error.toString());
-              return Text(snapshot.error.toString());
-            } else {
-              return ListView(children: snapshot.data!);
-            }
-          },
-        ),
+        ListView(children: getTopicButtons(),),
 
 
         /// Messages page

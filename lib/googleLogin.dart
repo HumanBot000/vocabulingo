@@ -12,7 +12,7 @@ class GoogleLogin extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return  Scaffold(appBar: defaultAppBar(), body: Text(
-      "We don't support this at the Moment. If you logged into duolingo with google, you can try to set a password in your duolingo settings. (IDK if this works this is untested)",
+      "We don't support this at the Moment. If you logged into duolingo with google, please log in to duolingo web, accuire your jwt token and use log in with duolingo. (IDK if this works this is untested)",
       style: TextStyle(color: Colors.red, fontSize: 20))
     );
   }
