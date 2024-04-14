@@ -6,6 +6,6 @@ Vocabulingo is an Vocabulary learn APP connected to your Duolingo account.
 
 Learn A Language in duolingo and study vocabularies in vocabulingo with the use of index cards
 
-![](presentation/Login Selector.png)
-![](presentation/Duolingo Login.png)
-![](presentation/Topic Selection.png)
+![](https://ibb.co/wc1ndDh)
+![](https://ibb.co/f9NRzPW)
+![](phttps://ibb.co/f9NRzPW)
