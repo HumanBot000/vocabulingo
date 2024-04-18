@@ -16,10 +16,14 @@ class LanguageSelector extends StatefulWidget {
   State<LanguageSelector> createState() => _LanguageSelectorState();
 }
 
-void setLanguage(String language,context) {
+void setLanguage(String language, context) {
   writeHive("activeLanguage", language);
-  Navigator.push(context, MaterialPageRoute(builder: (context) =>  const Home()));
+  Navigator.push(
+      context, MaterialPageRoute(builder: (context) => const Home()));
 }
+
+
+
 class _LanguageSelectorState extends State<LanguageSelector> {
   bool _isSupported(String language) {
     List<String> supportedLanguages = [
@@ -56,17 +60,15 @@ class _LanguageSelectorState extends State<LanguageSelector> {
   Future<Widget> _buildContainer() async {
     var username = readHive("username");
     var jwt = readHive("jwt");
-    var body = jsonEncode({
-      "user": username,
-      "jwt": jwt
-    });
+    var body = jsonEncode({"user": username, "jwt": jwt});
     var response = await http.post(
         Uri.parse('https://10.0.2.2:5000/get_full_language_info'),
-        body: body, headers: {
-      "Accept": "application/json",
-      "content-type": "application/json"
-    });
-    if (response.statusCode == 401){
+        body: body,
+        headers: {
+          "Accept": "application/json",
+          "content-type": "application/json"
+        });
+    if (response.statusCode == 401) {
       throw "unauthorized";
     }
     List<String> languages = json.decode(response.body)[0].cast<String>();
@@ -74,12 +76,16 @@ class _LanguageSelectorState extends State<LanguageSelector> {
     List<Widget> children = [];
     for (String language in languages) {
       children.add(
-        ElevatedButton.icon(onPressed: () {setLanguage(language,context);},
-          icon: _isSupported(language) ? SvgPicture.asset(
-              "lib/src/svg/${language}.svg", height: 20, width: 20) : SvgPicture.asset(height: 20,width: 20,
-              "lib/src/svg/xx.svg"),
-          label: Text(fullName[languages.indexOf(language)]),),
-
+        ElevatedButton.icon(
+          onPressed: () {
+            setLanguage(language, context);
+          },
+          icon: _isSupported(language)
+              ? SvgPicture.asset("lib/src/svg/${language}.svg",
+                  height: 20, width: 20)
+              : SvgPicture.asset(height: 20, width: 20, "lib/src/svg/xx.svg"),
+          label: Text(fullName[languages.indexOf(language)]),
+        ),
       );
     }
     return ListView(children: children);
@@ -99,8 +105,9 @@ class _LanguageSelectorState extends State<LanguageSelector> {
                     itemBuilder: (BuildContext context, int index) {
                       return DecoratedBox(
                         decoration: BoxDecoration(
-                            color:
-                            index.isEven ? appPrimaryColor : appSecondaryColor,
+                            color: index.isEven
+                                ? appPrimaryColor
+                                : appSecondaryColor,
                             shape: BoxShape.circle),
                       );
                     },
@@ -110,11 +117,10 @@ class _LanguageSelectorState extends State<LanguageSelector> {
                   return Text(snapshot.error.toString());
                 } else {
                   return snapshot.data!;
-
                 }
-              }
-          )
+              })
         ],
-      ),);
+      ),
+    );
   }
 }

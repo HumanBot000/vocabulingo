@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'package:vocabulingo/learningSession.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:hive/hive.dart';
@@ -15,6 +15,7 @@ class Home extends StatefulWidget {
   @override
   State<Home> createState() => _HomeState();
 }
+
 List<dynamic> getAllTopics() {
   var box = Hive.box('topics');
   if (box.isEmpty) {
@@ -22,10 +23,12 @@ List<dynamic> getAllTopics() {
   }
   return box.keys.toList();
 }
+
 void addTopic(String topicName) {
   var box = Hive.box('topics');
   box.put(topicName, []);
 }
+
 void addVocabularies(String topicName, List<String> vocabularies) {
   var box = Hive.box('topics');
   for (String vocabulary in vocabularies) {
@@ -35,52 +38,57 @@ void addVocabularies(String topicName, List<String> vocabularies) {
     box.put(topicName, list);
   }
 }
-List<Widget> getTopicButtons() {
-  List knownTopics = getAllTopics();
-  List<Widget> children = [];
-  for (String topic in knownTopics) {
-    children.add(
-        ElevatedButton(onPressed: () {},
-          child: Text(
-              topic, style: TextStyle(color: Colors.black, fontSize: 20)),
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.white),)
-    );
-  }
-  return children;
-}
+
 Future<List<Widget>> getOfficialTopicButtons() async {
   var username = readHive("username");
   var jwt = readHive("jwt");
-  var body = jsonEncode({
-    "user": username,
-    "jwt": jwt,
-    "lang": readHive("activeLanguage")
-  });
+  var body = jsonEncode(
+      {"user": username, "jwt": jwt, "lang": readHive("activeLanguage")});
   List<Widget> children = [];
   var response = await http.post(
       Uri.parse('https://10.0.2.2:5000/get_known_topics'),
-      body: body, headers: {
-    "Accept": "application/json",
-    "content-type": "application/json"
-  });
+      body: body,
+      headers: {
+        "Accept": "application/json",
+        "content-type": "application/json"
+      });
   if (response.statusCode == 401) {
     throw "unauthorized";
   }
   List<String> knownTopics = json.decode(response.body).cast<String>();
   for (String topic in knownTopics) {
-    children.add(
-        ElevatedButton(onPressed: () {},
-          child: Text(
-              topic, style: TextStyle(color: Colors.black, fontSize: 20)),
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.white),)
-    );
+    children.add(ElevatedButton(
+      onPressed: () {},
+      child: Text(topic, style: TextStyle(color: Colors.black, fontSize: 20)),
+      style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
+    ));
   }
   return children;
 }
 
 class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
-
   int currentPageIndex = 0;
+
+  List<Widget> getTopicButtons(BuildContext context) {
+    List knownTopics = getAllTopics();
+    List<Widget> children = [];
+    for (String topic in knownTopics) {
+      children.add(ElevatedButton(
+        child: Text(topic, style: TextStyle(color: Colors.black, fontSize: 20)),
+        style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
+        onPressed: () {
+          setState(() {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => LearningSession(topic: topic),
+                ));
+          });
+        },
+      ));
+    }
+    return children;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +103,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         },
         indicatorColor: Colors.amber,
         selectedIndex: currentPageIndex,
-        destinations: <Widget>[
+        destinations: const <Widget>[
           NavigationDestination(
             selectedIcon: Icon(CustomIcons.MyFlutterApp.book_open),
             icon: Icon(CustomIcons.MyFlutterApp.book_open),
@@ -115,10 +123,10 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         ],
       ),
       body: <Widget>[
-
         /// Vocabularies page
-        ListView(children: getTopicButtons(),),
-
+        ListView(
+          children: getTopicButtons(context),
+        ),
 
         /// Messages page
         ListView.builder(
