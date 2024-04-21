@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:vocabulingo/src/configuration.dart';
 import 'package:vocabulingo/home.dart';
+import 'package:vocabulingo/src/configuration.dart';
 class DuolingoLogin extends StatefulWidget {
   DuolingoLogin({super.key});
 
@@ -24,7 +25,7 @@ Future<bool> checkDuolingoCredentials(String username, String jwt) async {
   });
   var response = await http
       .post(
-      Uri.parse('https://10.0.2.2:5000/check_credentials'), body: body,headers: {
+      Uri.parse('${backendAddress()}/check_credentials'), body: body,headers: {
   "Accept": "application/json",
   "content-type": "application/json"
   });

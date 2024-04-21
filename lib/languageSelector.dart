@@ -62,7 +62,7 @@ class _LanguageSelectorState extends State<LanguageSelector> {
     var jwt = readHive("jwt");
     var body = jsonEncode({"user": username, "jwt": jwt});
     var response = await http.post(
-        Uri.parse('https://10.0.2.2:5000/get_full_language_info'),
+        Uri.parse('${backendAddress()}/get_full_language_info'),
         body: body,
         headers: {
           "Accept": "application/json",

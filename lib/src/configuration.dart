@@ -11,3 +11,7 @@ AppBar defaultAppBar() {
     centerTitle: true,
   );
 }
+
+String backendAddress(){
+  return "https://10.0.2.2:5000";
+}
