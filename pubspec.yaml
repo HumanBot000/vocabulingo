@@ -43,6 +43,7 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   flutter_svg: ^2.0.5
+  swipable_stack: ^2.0.0
 
 
 dev_dependencies:
@@ -76,7 +77,8 @@ flutter:
     - lib/src/svg/es.svg
     - lib/src/svg/fr.svg
     - lib/src/svg/gr.svg
-    - lib/src/svg/gb-wls.svg
+    - lib/src/svg/gb.svg
+    - lib/src/svg/de.svg
     - lib/src/svg/it.svg
     - lib/src/svg/nl.svg
     - lib/src/svg/ie.svg

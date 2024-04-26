@@ -101,7 +101,7 @@ class MyApp extends StatelessWidget {
 }
 
 Future<bool> isFirstOpen() async {
-  if (await _readHive("firstOpen") == "null" || await _readHive("username") == "null" || await _readHive("jwt") == "null") {
+  if (await _readHive("firstOpen") == "null" || await _readHive("username") == "null" || await _readHive("jwt") == "null" || await _readHive("sourceLanguage") == "null") {
     return true;
   }
   var username = await _readHive("username").then((value) => value.toString());

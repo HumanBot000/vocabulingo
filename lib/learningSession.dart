@@ -9,6 +9,8 @@ import 'package:vocabulingo/main.dart';
 import 'package:vocabulingo/src/configuration.dart';
 import 'package:vocabulingo/src/icons/my_flutter_app_icons.dart' as CustomIcons;
 import 'package:http/http.dart' as http;
+import 'package:swipable_stack/swipable_stack.dart';
+import 'dart:math' as math;
 
 class LearningSession extends StatefulWidget {
   const LearningSession({
@@ -26,6 +28,7 @@ class _LearningSessionState extends State<LearningSession> {
   List<dynamic>? vocabularies;
   int index = 0;
   bool cardExpanded = false;
+
   @override
   void initState() {
     super.initState();
@@ -77,17 +80,18 @@ class _LearningSessionState extends State<LearningSession> {
     return vocabCard(vocabularies![index]);
   }
 
-  Widget getActiveLanguageSVGPath({double width = 20.0, double height = 20.0}) {
-    var language = readHive("activeLanguage");
+  Widget getSourceLanguageSVGPath({double width = 20.0, double height = 20.0}) {
+    var language = readHive("sourceLanguage");
     List<String> supportedLanguages = [
       "ae",
       "ch",
+      "de",
       "cz",
       "dk",
       "es",
       "fr",
       "gr",
-      "gb-wls",
+      "gb",
       "it",
       "nl",
       "ie",
@@ -115,7 +119,52 @@ class _LearningSessionState extends State<LearningSession> {
       );
     }
     return SvgPicture.asset(
-      "lib/src/svg/unknown.svg",
+      "lib/src/svg/xx.svg",
+      height: width,
+      width: height,
+    );
+  }
+
+  Widget getActiveLanguageSVGPath({double width = 20.0, double height = 20.0}) {
+    var language = readHive("activeLanguage");
+    List<String> supportedLanguages = [
+      "ae",
+      "de",
+      "ch",
+      "cz",
+      "dk",
+      "es",
+      "fr",
+      "gr",
+      "gb",
+      "it",
+      "nl",
+      "ie",
+      "il",
+      "in",
+      "jp",
+      "kr",
+      "no",
+      "pl",
+      "pt",
+      "ro",
+      "ru",
+      "se",
+      "ch",
+      "tr",
+      "ua",
+      "us",
+      "vn"
+    ];
+    if (supportedLanguages.contains(language)) {
+      return SvgPicture.asset(
+        "lib/src/svg/${language}.svg",
+        height: height,
+        width: width,
+      );
+    }
+    return SvgPicture.asset(
+      "lib/src/svg/xx.svg",
       height: width,
       width: height,
     );
@@ -132,32 +181,184 @@ class _LearningSessionState extends State<LearningSession> {
         ),
       ),
     ];
+
+    List<String> translations = [];
+
     if (cardExpanded) {
-      String translations = "";
       for (var translation in vocab["translations"]) {
-        translations += translation["translation"] + ",";
+        translations.add(translation);
       }
       children.add(
+        getSourceLanguageSVGPath(width: 100.0, height: 100.0),
+      );
+      children.add(
         ListTile(
-          title: Text(translations),
-        )
+          title: Text(translations.join(",")),
+        ),
       );
     }
-    return InkWell(
-      onTap: () {
-        setState(() {
-          cardExpanded = !cardExpanded;
-        });
-      },
-      child: Card(
-        elevation: 1.0,
-        clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.0),
-          side: BorderSide(color: appPrimaryColor, width: 2.0),
+    if (cardExpanded) {
+      return SwipableStack(
+        overlayBuilder: (context, properties) {
+          final opacity = min(properties.swipeProgress, 1.0);
+          final isRight = properties.direction == SwipeDirection.right;
+          if (isRight) {
+            return Opacity(
+              opacity: isRight ? opacity : 0,
+              child: CardLabel.right(),
+            );
+          }
+          return Opacity(
+            opacity: isRight ? 0 : opacity,
+            child: CardLabel.left(),
+          );
+        },
+        builder: (context, properties) {
+          return InkWell(
+            onTap: () {
+              setState(() {
+                cardExpanded = !cardExpanded;
+              });
+            },
+            child: Card(
+              elevation: 1.0,
+              clipBehavior: Clip.antiAlias,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.0),
+                side: BorderSide(color: appPrimaryColor, width: 2.0),
+              ),
+              child: Column(
+                children: children,
+              ),
+            ),
+          );
+        },
+        onSwipeCompleted: (index, direction) {
+          setState(() {//todo check if it was last vocabulary
+            if (direction == SwipeDirection.right) {
+              vocabularies!.removeAt(index);
+            }
+            cardExpanded = !cardExpanded;
+            allVocabSession();
+          });
+        },
+        allowVerticalSwipe: false,
+        detectableSwipeDirections: const {
+          SwipeDirection.right,
+          SwipeDirection.left,
+        },
+      );
+    } else {
+      return InkWell(
+        onTap: () {
+          setState(() {
+            cardExpanded = !cardExpanded;
+          });
+        },
+        child: Card(
+          elevation: 1.0,
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+            side: BorderSide(color: appPrimaryColor, width: 2.0),
+          ),
+          child: Column(
+            children: children,
+          ),
         ),
-        child: Column(
-          children:children
+      );
+    }
+  }
+}
+
+class SwipeDirectionColor {
+  static const right = Color.fromRGBO(70, 195, 120, 1);
+  static const left = Color.fromRGBO(220, 90, 108, 1);
+  static const up = Color.fromRGBO(83, 170, 232, 1);
+  static const down = Color.fromRGBO(154, 85, 215, 1);
+}
+
+const _labelAngle = math.pi / 2 * 0.2;
+
+class CardLabel extends StatelessWidget {
+  const CardLabel._({
+    required this.color,
+    required this.label,
+    required this.angle,
+    required this.alignment,
+  });
+
+  factory CardLabel.right() {
+    return const CardLabel._(
+      color: SwipeDirectionColor.right,
+      label: 'RIGHT',
+      angle: -_labelAngle,
+      alignment: Alignment.topLeft,
+    );
+  }
+
+  factory CardLabel.left() {
+    return const CardLabel._(
+      color: SwipeDirectionColor.left,
+      label: 'LEFT',
+      angle: _labelAngle,
+      alignment: Alignment.topRight,
+    );
+  }
+
+  factory CardLabel.up() {
+    return const CardLabel._(
+      color: SwipeDirectionColor.up,
+      label: 'UP',
+      angle: _labelAngle,
+      alignment: Alignment(0, 0.5),
+    );
+  }
+
+  factory CardLabel.down() {
+    return const CardLabel._(
+      color: SwipeDirectionColor.down,
+      label: 'DOWN',
+      angle: -_labelAngle,
+      alignment: Alignment(0, -0.75),
+    );
+  }
+
+  final Color color;
+  final String label;
+  final double angle;
+  final Alignment alignment;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(
+        vertical: 36,
+        horizontal: 36,
+      ),
+      child: Transform.rotate(
+        angle: angle,
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: color,
+              width: 4,
+            ),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          padding: const EdgeInsets.all(6),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.4,
+              color: color,
+              height: 1,
+            ),
+          ),
         ),
       ),
     );

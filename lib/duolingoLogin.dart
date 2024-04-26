@@ -30,6 +30,12 @@ Future<bool> checkDuolingoCredentials(String username, String jwt) async {
   "content-type": "application/json"
   });
   if (response.statusCode == 200) {
+    var response = await http
+        .post(
+        Uri.parse('${backendAddress()}/get_ui_language'), body: body,headers: {"Accept": "application/json",
+    "content-type": "application/json"
+    });
+    writeHive("sourceLanguage", response.body);
     return true;
   } else {
     return false;
