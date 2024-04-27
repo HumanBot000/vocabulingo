@@ -199,6 +199,37 @@ class _LearningSessionState extends State<LearningSession> {
           title: Text(translations.join(",")),
         ),
       );
+      children.add(
+        ButtonBar(
+          alignment: MainAxisAlignment.center,
+          children: [
+            IconButton(onPressed: (){
+              setState(() {
+                if (vocabularies!.length == 1) {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const Home()
+                      )
+                  );
+                }
+                else {
+                  successfulVocabs++;
+                  vocabularies!.removeAt(index);
+                  cardExpanded = !cardExpanded;
+                  index = Random().nextInt(vocabularies!.length);
+                }
+              });
+            }, icon: Icon(Icons.check), color: Color.fromRGBO(70, 195, 120, 1)),
+            IconButton(onPressed: (){
+              setState(() {
+                cardExpanded = !cardExpanded;
+                index = Random().nextInt(vocabularies!.length);
+              });
+            }, icon: Icon(Icons.close), color:Color.fromRGBO(220, 90, 108, 1)),
+          ]
+        )
+      );
     }
     if (cardExpanded) {
       return SwipableStack(
@@ -249,12 +280,11 @@ class _LearningSessionState extends State<LearningSession> {
               }
               else {
                 successfulVocabs++;
-                vocabularies!.removeAt(swipeIndex);
+                vocabularies!.removeAt(index);
               }
             }
             cardExpanded = !cardExpanded;
             index = Random().nextInt(vocabularies!.length);
-            allVocabSession();
           });
         },
         allowVerticalSwipe: false,
@@ -306,7 +336,7 @@ class CardLabel extends StatelessWidget {
   factory CardLabel.right() {
     return const CardLabel._(
       color: SwipeDirectionColor.right,
-      label: 'RIGHT',
+      label: 'CORRECT',
       angle: -_labelAngle,
       alignment: Alignment.topLeft,
     );
@@ -315,7 +345,7 @@ class CardLabel extends StatelessWidget {
   factory CardLabel.left() {
     return const CardLabel._(
       color: SwipeDirectionColor.left,
-      label: 'LEFT',
+      label: 'WRONG',
       angle: _labelAngle,
       alignment: Alignment.topRight,
     );

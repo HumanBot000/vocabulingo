@@ -18,7 +18,7 @@ class DuolingoLogin extends StatefulWidget {
   State<DuolingoLogin> createState() => _DuolingoLoginState();
 }
 
-Future<bool> checkDuolingoCredentials(String username, String jwt) async {
+Future<bool> checkDuolingoCredentials(String username, String jwt,{bool uiLanguage=false}) async {
   var body = jsonEncode({
     "user": username,
     "jwt": jwt //todo change backend so no jwt needs to be provided. I don't know if this is a good idea because of rate-limits. But I also know most people won't look for their jwt
@@ -30,12 +30,14 @@ Future<bool> checkDuolingoCredentials(String username, String jwt) async {
   "content-type": "application/json"
   });
   if (response.statusCode == 200) {
-    var response = await http
-        .post(
+    if (uiLanguage){
+        var response = await http
+            .post(
         Uri.parse('${backendAddress()}/get_ui_language'), body: body,headers: {"Accept": "application/json",
-    "content-type": "application/json"
-    });
-    writeHive("sourceLanguage", response.body);
+        "content-type": "application/json"
+        });
+        writeHive("sourceLanguage", response.body);
+    }
     return true;
   } else {
     return false;
@@ -167,7 +169,7 @@ class _DuolingoLoginState extends State<DuolingoLogin> {
                   onPressed: () {
                     if (_usernameController.text.isNotEmpty &&
                         _passwordController.text.isNotEmpty) {
-                      checkDuolingoCredentials(
+                      checkDuolingoCredentials(uiLanguage: true,
                           _usernameController.text, _passwordController.text)
                           .then((value) {
                         if (value) {
