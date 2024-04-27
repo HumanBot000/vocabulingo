@@ -5,6 +5,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
+import 'package:vocabulingo/home.dart';
 import 'package:vocabulingo/main.dart';
 import 'package:vocabulingo/src/configuration.dart';
 import 'package:vocabulingo/src/icons/my_flutter_app_icons.dart' as CustomIcons;
@@ -28,7 +29,8 @@ class _LearningSessionState extends State<LearningSession> {
   List<dynamic>? vocabularies;
   int index = 0;
   bool cardExpanded = false;
-
+  int allVocabs = 0;
+  int successfulVocabs = 0;
   @override
   void initState() {
     super.initState();
@@ -53,9 +55,9 @@ class _LearningSessionState extends State<LearningSession> {
     }
     List<dynamic> fetchedVocabularies = json.decode(response.body);
     fetchedVocabularies.shuffle();
+    allVocabs = fetchedVocabularies.length;
     setState(() {
       vocabularies = fetchedVocabularies;
-      index = Random().nextInt(vocabularies!.length);
     });
   }
 
@@ -172,6 +174,7 @@ class _LearningSessionState extends State<LearningSession> {
 
   Widget vocabCard(dynamic vocab) {
     var children = [
+      Text("$successfulVocabs / $allVocabs"),
       getActiveLanguageSVGPath(width: 100.0, height: 100.0),
       ListTile(
         title: Text(vocab["text"]),
@@ -189,7 +192,7 @@ class _LearningSessionState extends State<LearningSession> {
         translations.add(translation);
       }
       children.add(
-        getSourceLanguageSVGPath(width: 100.0, height: 100.0),
+        getSourceLanguageSVGPath(width: 40.0, height: 40.0),
       );
       children.add(
         ListTile(
@@ -233,12 +236,24 @@ class _LearningSessionState extends State<LearningSession> {
             ),
           );
         },
-        onSwipeCompleted: (index, direction) {
-          setState(() {//todo check if it was last vocabulary
+        onSwipeCompleted: (swipeIndex, direction) {
+          setState(() {
             if (direction == SwipeDirection.right) {
-              vocabularies!.removeAt(index);
+              if (vocabularies!.length == 1) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const Home()
+                  )
+                );
+              }
+              else {
+                successfulVocabs++;
+                vocabularies!.removeAt(swipeIndex);
+              }
             }
             cardExpanded = !cardExpanded;
+            index = Random().nextInt(vocabularies!.length);
             allVocabSession();
           });
         },
