@@ -3,6 +3,7 @@ import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vocabulingo/information/JWT.dart';
+import 'package:vocabulingo/languageSelector.dart';
 import 'package:vocabulingo/main.dart';
 import 'package:vocabulingo/src/icons/my_flutter_app_icons.dart' as CustomIcons;
 import 'package:vocabulingo/information/dataStorageInformation.dart';
@@ -25,7 +26,7 @@ Future<bool> checkDuolingoCredentials(String username, String jwt,{bool uiLangua
   });
   var response = await http
       .post(
-      Uri.parse('${backendAddress()}/check_credentials'), body: body,headers: {
+      Uri.https(backendAddress(),"check_credentials"), body: body,headers: {
   "Accept": "application/json",
   "content-type": "application/json"
   });
@@ -33,7 +34,7 @@ Future<bool> checkDuolingoCredentials(String username, String jwt,{bool uiLangua
     if (uiLanguage){
         var response = await http
             .post(
-        Uri.parse('${backendAddress()}/get_ui_language'), body: body,headers: {"Accept": "application/json",
+        Uri.https(backendAddress(),"get_ui_language"), body: body,headers: {"Accept": "application/json",
         "content-type": "application/json"
         });
         writeHive("sourceLanguage", response.body);
@@ -61,7 +62,7 @@ class _DuolingoLoginState extends State<DuolingoLogin> {
       writeHive("firstOpen", "false");
       writeHive("username", username);
       writeHive("jwt", jwt);
-      Navigator.push(context, MaterialPageRoute(builder: (context) => Home()));
+      Navigator.push(context, MaterialPageRoute(builder: (context) => LanguageSelector()));
     }
     double screenHeight = MediaQuery
         .of(context)

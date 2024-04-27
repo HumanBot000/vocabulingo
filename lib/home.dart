@@ -46,7 +46,7 @@ Future<List<Widget>> getOfficialTopicButtons() async {
       {"user": username, "jwt": jwt, "lang": readHive("activeLanguage")});
   List<Widget> children = [];
   var response = await http.post(
-      Uri.parse('${backendAddress()}/get_known_topics'),
+      Uri.https(backendAddress(),"get_known_topics"),
       body: body,
       headers: {
         "Accept": "application/json",

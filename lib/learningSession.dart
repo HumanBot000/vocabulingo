@@ -43,7 +43,7 @@ class _LearningSessionState extends State<LearningSession> {
     var lang = readHive("activeLanguage");
     var body = jsonEncode({"user": username, "jwt": jwt, "lang": lang});
     var response = await http.post(
-      Uri.parse('${backendAddress()}/get_vocabularies'),
+      Uri.https(backendAddress(),"get_vocabularies"),
       body: body,
       headers: {
         "Accept": "application/json",

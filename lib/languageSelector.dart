@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:vocabulingo/home.dart';
@@ -34,6 +32,7 @@ class _LanguageSelectorState extends State<LanguageSelector> {
       "dk",
       "es",
       "fr",
+      "en",
       "gr",
       "gb",
       "it",
@@ -63,7 +62,7 @@ class _LanguageSelectorState extends State<LanguageSelector> {
     var jwt = readHive("jwt");
     var body = jsonEncode({"user": username, "jwt": jwt});
     var response = await http.post(
-        Uri.parse('${backendAddress()}/get_full_language_info'),
+        Uri.https(backendAddress(),"get_full_language_info"),
         body: body,
         headers: {
           "Accept": "application/json",

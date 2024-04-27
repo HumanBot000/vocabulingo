@@ -44,8 +44,25 @@ dependencies:
   hive_flutter: ^1.1.0
   flutter_svg: ^2.0.5
   swipable_stack: ^2.0.0
+  flutter_launcher_icons: "^0.13.1"
 
-
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "src/icons/android/playstore-icon.png"
+  min_sdk_android: 21 # android min sdk min:16, default 21
+  web:
+    generate: true
+    image_path: "src/icons/web/android-chrome-192x192.png"
+    background_color: "#00C853FF"
+    theme_color: "#00C853FF"
+  windows:
+    generate: true
+    image_path: "src/icons/web/android-chrome-192x192.png"
+    icon_size: 192 # min:48, max:256, default: 48
+  macos:
+    generate: true
+    image_path: "src/icons/web/android-chrome-192x192.png"
 dev_dependencies:
   flutter_test:
     sdk: flutter
