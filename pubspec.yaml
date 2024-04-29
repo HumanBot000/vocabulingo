@@ -93,6 +93,7 @@ flutter:
     - lib/src/svg/dk.svg
     - lib/src/svg/es.svg
     - lib/src/svg/fr.svg
+    - lib/src/svg/en.svg
     - lib/src/svg/gr.svg
     - lib/src/svg/gb.svg
     - lib/src/svg/de.svg
