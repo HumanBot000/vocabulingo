@@ -340,7 +340,6 @@ class _LearningSessionState extends State<LearningSession> {
             index = Random().nextInt(vocabularies!.length);
           });
         },
-        allowVerticalSwipe: false,
         detectableSwipeDirections: const {
           SwipeDirection.right,
           SwipeDirection.left,
