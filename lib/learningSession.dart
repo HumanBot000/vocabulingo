@@ -12,6 +12,7 @@ import 'package:vocabulingo/src/icons/my_flutter_app_icons.dart' as CustomIcons;
 import 'package:http/http.dart' as http;
 import 'package:swipable_stack/swipable_stack.dart';
 import 'dart:math' as math;
+import 'package:just_audio/just_audio.dart';
 
 class LearningSession extends StatefulWidget {
   const LearningSession({
@@ -31,6 +32,8 @@ class _LearningSessionState extends State<LearningSession> {
   bool cardExpanded = false;
   int allVocabs = 0;
   int successfulVocabs = 0;
+  final audioPlayer = AudioPlayer();
+
   @override
   void initState() {
     super.initState();
@@ -43,7 +46,7 @@ class _LearningSessionState extends State<LearningSession> {
     var lang = readHive("activeLanguage");
     var body = jsonEncode({"user": username, "jwt": jwt, "lang": lang});
     var response = await http.post(
-      Uri.https(backendAddress(),"get_vocabularies"),
+      Uri.https(backendAddress(), "get_vocabularies"),
       body: body,
       headers: {
         "Accept": "application/json",
@@ -173,18 +176,44 @@ class _LearningSessionState extends State<LearningSession> {
   }
 
   Widget vocabCard(dynamic vocab) {
-    var children = [
-      Text("$successfulVocabs / $allVocabs"),
-      getActiveLanguageSVGPath(width: 100.0, height: 100.0),
-      ListTile(
-        title: Text(vocab["text"]),
-        subtitle: Text(
-          'Do you know how to translate this?',
-          style: TextStyle(color: Colors.black.withOpacity(0.6)),
+    List<Widget> children = [];
+    if (cardExpanded == false) {
+      children = [
+        Text("$successfulVocabs / $allVocabs"),
+        getActiveLanguageSVGPath(width: 100.0, height: 100.0),
+        ListTile(
+          title: Text(vocab["text"]),
+          subtitle: Text(
+            'Do you know how to translate this?',
+            style: TextStyle(color: Colors.black.withOpacity(0.6)),
+          ),
         ),
-      ),
-    ];
-
+      ];
+    } else {
+      children = [
+        Text("$successfulVocabs / $allVocabs"),
+        getActiveLanguageSVGPath(width: 100.0, height: 100.0),
+        ListTile(
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(vocab["text"]),
+              IconButton(
+                  onPressed: () {
+                    audioPlayer.setUrl(vocab["audioURL"]);
+                    audioPlayer.play();
+                  },
+                  icon: Icon(Icons.play_arrow_rounded),
+                  color: Color.fromRGBO(41, 59, 51, 1.0))
+            ],
+          ),
+          subtitle: Text(
+            'Did you know how to translate this?',
+            style: TextStyle(color: Colors.black.withOpacity(0.6)),
+          ),
+        ),
+      ];
+    }
     List<String> translations = [];
 
     if (cardExpanded) {
@@ -199,37 +228,33 @@ class _LearningSessionState extends State<LearningSession> {
           title: Text(translations.join(",")),
         ),
       );
-      children.add(
-        ButtonBar(
-          alignment: MainAxisAlignment.center,
-          children: [
-            IconButton(onPressed: (){
+      children.add(ButtonBar(alignment: MainAxisAlignment.center, children: [
+        IconButton(
+            onPressed: () {
               setState(() {
                 if (vocabularies!.length == 1) {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const Home()
-                      )
-                  );
-                }
-                else {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => const Home()));
+                } else {
                   successfulVocabs++;
                   vocabularies!.removeAt(index);
                   cardExpanded = !cardExpanded;
                   index = Random().nextInt(vocabularies!.length);
                 }
               });
-            }, icon: Icon(Icons.check), color: Color.fromRGBO(70, 195, 120, 1)),
-            IconButton(onPressed: (){
+            },
+            icon: Icon(Icons.check),
+            color: Color.fromRGBO(70, 195, 120, 1)),
+        IconButton(
+            onPressed: () {
               setState(() {
                 cardExpanded = !cardExpanded;
                 index = Random().nextInt(vocabularies!.length);
               });
-            }, icon: Icon(Icons.close), color:Color.fromRGBO(220, 90, 108, 1)),
-          ]
-        )
-      );
+            },
+            icon: Icon(Icons.close),
+            color: Color.fromRGBO(220, 90, 108, 1)),
+      ]));
     }
     if (cardExpanded) {
       return SwipableStack(
@@ -271,14 +296,9 @@ class _LearningSessionState extends State<LearningSession> {
           setState(() {
             if (direction == SwipeDirection.right) {
               if (vocabularies!.length == 1) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const Home()
-                  )
-                );
-              }
-              else {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => const Home()));
+              } else {
                 successfulVocabs++;
                 vocabularies!.removeAt(index);
               }

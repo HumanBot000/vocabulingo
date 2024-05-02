@@ -13,5 +13,5 @@ AppBar defaultAppBar() {
 }
 
 String backendAddress(){
-  return "85.215.233.210:5000";
+  return "10.0.2.2:5000";
 }

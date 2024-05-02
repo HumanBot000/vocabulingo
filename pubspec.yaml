@@ -45,6 +45,7 @@ dependencies:
   flutter_svg: ^2.0.5
   swipable_stack: ^2.0.0
   flutter_launcher_icons: "^0.13.1"
+  just_audio: ^0.9.37
 
 flutter_launcher_icons:
   android: "launcher_icon"
