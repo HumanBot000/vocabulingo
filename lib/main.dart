@@ -27,6 +27,7 @@ void main() async{
   await Hive.initFlutter();
   await Hive.openBox('settings');
   await Hive.openBox('topics');
+  await Hive.openBox('topicIcons');
   //app
   runApp(
     ChangeNotifierProvider(

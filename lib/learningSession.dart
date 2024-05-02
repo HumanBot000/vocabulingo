@@ -5,6 +5,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
+import 'package:vocabulingo/addTopic.dart';
 import 'package:vocabulingo/home.dart';
 import 'package:vocabulingo/main.dart';
 import 'package:vocabulingo/src/configuration.dart';
@@ -331,11 +332,17 @@ class _LearningSessionState extends State<LearningSession> {
               if (vocabularies!.length == 1) {
                 Navigator.push(context,
                     MaterialPageRoute(builder: (context) => const Home()));
-              } else {
+              }
+            }
+              else if (direction == SwipeDirection.left) {
                 successfulVocabs++;
                 vocabularies!.removeAt(index);
               }
-            }
+              else if (direction == SwipeDirection.down) {
+                setState(() {
+                  Navigator.push(context,MaterialPageRoute(builder: (context) => const AddTopic()));
+                });
+              }
             cardExpanded = !cardExpanded;
             index = Random().nextInt(vocabularies!.length);
           });
@@ -407,7 +414,7 @@ class CardLabel extends StatelessWidget {
   factory CardLabel.up() {
     return const CardLabel._(
       color: SwipeDirectionColor.up,
-      label: 'SAVE',
+      label: 'UP',
       angle: _labelAngle,
       alignment: Alignment(0, 0.5),
     );
@@ -416,7 +423,7 @@ class CardLabel extends StatelessWidget {
   factory CardLabel.down() {
     return const CardLabel._(
       color: SwipeDirectionColor.down,
-      label: 'DOWN',
+      label: 'SAVE TO TOPIC',
       angle: -_labelAngle,
       alignment: Alignment(0, -0.75),
     );

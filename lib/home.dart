@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi';
 import 'package:vocabulingo/learningSession.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -19,14 +20,20 @@ class Home extends StatefulWidget {
 List<dynamic> getAllTopics() {
   var box = Hive.box('topics');
   if (box.isEmpty) {
-    addTopic("All");
+    addTopic("All",Icons.abc.codePoint,);
   }
   return box.keys.toList();
 }
 
-void addTopic(String topicName) {
+Icon getTopicIcon(String topicName) {
+  var box = Hive.box('topicIcons');
+  return Icon(IconData(box.get(topicName),fontFamily: 'MaterialIcons'));
+}
+void addTopic(String topicName,int icon) {
   var box = Hive.box('topics');
+  var topicIconBox = Hive.box('topicIcons');
   box.put(topicName, []);
+  topicIconBox.put(topicName, icon);
 }
 
 void addVocabularies(String topicName, List<String> vocabularies) {
