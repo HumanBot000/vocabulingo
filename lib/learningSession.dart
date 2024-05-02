@@ -18,10 +18,15 @@ class LearningSession extends StatefulWidget {
   const LearningSession({
     Key? key,
     required this.topic,
+    required this.vocabularies,
+    required this.correctVocabularies,
+    required this.index
   }) : super(key: key);
 
   final String topic;
-
+  final List<dynamic> vocabularies;
+  final int correctVocabularies;
+  final int index;
   @override
   State<LearningSession> createState() => _LearningSessionState();
 }
@@ -33,11 +38,17 @@ class _LearningSessionState extends State<LearningSession> {
   int allVocabs = 0;
   int successfulVocabs = 0;
   final audioPlayer = AudioPlayer();
-
   @override
   void initState() {
     super.initState();
-    loadVocabularies();
+    if (widget.correctVocabularies == -1) {
+      loadVocabularies();
+    }
+    else{
+      index = widget.index;
+      allVocabs = widget.vocabularies.length;
+      successfulVocabs = widget.correctVocabularies;
+    }
   }
 
   Future<void> loadVocabularies() async {
@@ -261,10 +272,32 @@ class _LearningSessionState extends State<LearningSession> {
         overlayBuilder: (context, properties) {
           final opacity = min(properties.swipeProgress, 1.0);
           final isRight = properties.direction == SwipeDirection.right;
+          final isLeft = properties.direction == SwipeDirection.left;
+          final isUp = properties.direction == SwipeDirection.up;
+          final isDown = properties.direction == SwipeDirection.down;
           if (isRight) {
             return Opacity(
               opacity: isRight ? opacity : 0,
               child: CardLabel.right(),
+            );
+          }
+          else if (isLeft) {
+            return Opacity(
+              opacity: isLeft ? opacity : 0,
+              child: CardLabel.left(),
+            );
+          }
+            else if (isUp) {
+              return Opacity(
+
+                opacity: isUp ? opacity : 0,
+                child: CardLabel.up(),
+              );
+            }
+          else if (isDown) {
+            return Opacity(
+              opacity: isDown ? opacity : 0,
+              child: CardLabel.down(),
             );
           }
           return Opacity(
@@ -311,6 +344,7 @@ class _LearningSessionState extends State<LearningSession> {
         detectableSwipeDirections: const {
           SwipeDirection.right,
           SwipeDirection.left,
+          SwipeDirection.down,
         },
       );
     } else {
@@ -340,7 +374,7 @@ class SwipeDirectionColor {
   static const right = Color.fromRGBO(70, 195, 120, 1);
   static const left = Color.fromRGBO(220, 90, 108, 1);
   static const up = Color.fromRGBO(83, 170, 232, 1);
-  static const down = Color.fromRGBO(154, 85, 215, 1);
+  static const down = Color.fromRGBO(41, 59, 51, 1.0);
 }
 
 const _labelAngle = math.pi / 2 * 0.2;
@@ -374,7 +408,7 @@ class CardLabel extends StatelessWidget {
   factory CardLabel.up() {
     return const CardLabel._(
       color: SwipeDirectionColor.up,
-      label: 'UP',
+      label: 'SAVE',
       angle: _labelAngle,
       alignment: Alignment(0, 0.5),
     );

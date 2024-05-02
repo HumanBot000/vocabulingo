@@ -81,7 +81,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
             Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => LearningSession(topic: topic),
+                  builder: (context) => LearningSession(topic: topic, vocabularies: const [], correctVocabularies: -1,index:-1),
                 ));
           });
         },
