@@ -14,7 +14,9 @@ import 'package:http/http.dart' as http;
 import 'dart:math' as math;
 
 class AddTopic extends StatefulWidget {
-  const AddTopic({super.key});
+  const AddTopic({Key? key, required this.vocabulary}) : super(key: key);
+
+  final List<String> vocabulary;
 
   @override
   State<AddTopic> createState() => _AddTopicState();
@@ -22,7 +24,7 @@ class AddTopic extends StatefulWidget {
 
 class _AddTopicState extends State<AddTopic> {
   late TextEditingController textFieldController = TextEditingController();
-
+  late IconData currentSelectedIcon = allIcons()[0];
   List<Widget> _getTopicButtons() {
     List<Widget> children = [];
     for (String topic in getAllTopics()) {
@@ -32,7 +34,44 @@ class _AddTopicState extends State<AddTopic> {
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.greenAccent.shade700),
-              onPressed: () {},
+              onPressed: () {
+                setState(() {
+                  if (vocabIsInTopic(topic, widget.vocabulary.toString().substring(1, widget.vocabulary.toString().length - 1))) {
+                    showDialog(
+                        context: context,
+                        builder: (context) =>
+                            AlertDialog(
+                                title: const Text(
+                                    "This vocabulary is already in this topic"),
+                                content:
+                                const Text(
+                                    "Do you want to remove it from that topic?"),
+                                actions: [
+                                  ElevatedButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text("Cancel")),
+                                  ElevatedButton(
+                                      onPressed: () {
+                                        removeVocabulariesFromTopic(topic,
+                                            [widget.vocabulary.toString()]);
+                                        if (topicIsEmpty(topic)) {
+                                          deleteTopic(topic);
+                                        }
+                                        Navigator.pop(context);
+                                        Navigator.pop(context);
+                                      },
+                                      child: const Text("Remove")),
+                                ]
+                            )
+                    );
+                  }
+                    else{
+                    addVocabulariesToTopic(topic, [widget.vocabulary.toString()]);
+                    Navigator.pop(context);
+                  }
+
+                });
+              },
               child: Text(topic,
                   style: TextStyle(color: Colors.black, fontSize: 20)),
             ),
@@ -58,6 +97,7 @@ class _AddTopicState extends State<AddTopic> {
             ),
           ),
           DropdownButton<IconData>(
+            value: currentSelectedIcon,
             items: allIcons().map((iconData) {
               return DropdownMenuItem<IconData>(
                 value: iconData,
@@ -69,15 +109,55 @@ class _AddTopicState extends State<AddTopic> {
               );
             }).toList(),
             onChanged: (selectedIcon) {
-              print('Selected Icon: $selectedIcon');
+              setState(() {
+                currentSelectedIcon = selectedIcon!;
+              });
             },
-          )
+          ),
+          const Divider(),
         ],
       ),
     ));
     children.add(FloatingActionButton(
       tooltip: "Add new Topic",
-      onPressed: () {},
+      onPressed: () {
+        if (textFieldController.text.isNotEmpty) {
+          if (topicExists(textFieldController.text)) {
+            showDialog(
+                context: context,
+                builder: (context) =>
+                    AlertDialog(
+                        title: const Text("Error"),
+                        content:
+                        const Text("Topic already exists"),
+                        actions: [
+                          ElevatedButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text("Ok"))
+                        ]));
+          }
+          else {
+            addTopic(textFieldController.text, currentSelectedIcon.codePoint);
+            addVocabulariesToTopic(textFieldController.text, [widget.vocabulary.toString()]);
+            Navigator.pop(context);
+          }
+
+        }
+        else{
+          showDialog(
+              context: context,
+              builder: (context) =>
+                  AlertDialog(
+                      title: const Text("Error"),
+                      content:
+                      const Text("Please enter a topic name"),
+                      actions: [
+                        ElevatedButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text("Ok"))
+                      ]));
+        }
+        },
       child: const Icon(Icons.add),
     )
     );

@@ -9,3 +9,6 @@ Learn A Language in duolingo and study vocabularies in vocabulingo with the use 
 ![](https://ibb.co/wc1ndDh)
 ![](https://ibb.co/f9NRzPW)
 ![](phttps://ibb.co/f9NRzPW)
+
+## Disclaimer
+``This project isn't related to duolingo or any of those products.``

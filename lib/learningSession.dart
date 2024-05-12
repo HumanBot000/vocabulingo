@@ -33,7 +33,7 @@ class LearningSession extends StatefulWidget {
 }
 
 class _LearningSessionState extends State<LearningSession> {
-  List<dynamic>? vocabularies;
+  List<dynamic>? _vocabularies;
   int index = 0;
   bool cardExpanded = false;
   int allVocabs = 0;
@@ -70,31 +70,50 @@ class _LearningSessionState extends State<LearningSession> {
     }
     List<dynamic> fetchedVocabularies = json.decode(response.body);
     fetchedVocabularies.shuffle();
-    allVocabs = fetchedVocabularies.length;
+
     setState(() {
-      vocabularies = fetchedVocabularies;
+      _vocabularies = fetchedVocabularies;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (vocabularies == null) {
+    if (_vocabularies == null) {
       return Scaffold(
         appBar: defaultAppBar(),
-        body: Center(
+        body: const Center(
           child: CircularProgressIndicator(),
         ),
       );
     } else {
       return Scaffold(
         appBar: defaultAppBar(),
-        body: allVocabSession(),
+        body: allVocabSession(widget.topic),
       );
     }
   }
 
-  Widget allVocabSession() {
-    return vocabCard(vocabularies![index]);
+  Widget allVocabSession(String topic) {
+    List<dynamic> tempVocabularies = List.from(_vocabularies!);
+    if (topic != "All") {
+      for (dynamic vocab in _vocabularies!) {
+        if (!vocabIsInTopic(topic, vocab["text"])) {
+          tempVocabularies.remove(vocab);
+        }
+        else{
+        }
+      }
+    }
+
+    _vocabularies = tempVocabularies;
+    if (allVocabs == 0) {
+      allVocabs = tempVocabularies.length;
+    }
+    if (tempVocabularies.isNotEmpty) {
+      return vocabCard(_vocabularies![index]);
+    } else {
+      return Container();
+    }
   }
 
   Widget getSourceLanguageSVGPath({double width = 20.0, double height = 20.0}) {
@@ -244,24 +263,27 @@ class _LearningSessionState extends State<LearningSession> {
         IconButton(
             onPressed: () {
               setState(() {
-                if (vocabularies!.length == 1) {
+                if (_vocabularies!.length == 1) {
                   Navigator.push(context,
                       MaterialPageRoute(builder: (context) => const Home()));
                 } else {
                   successfulVocabs++;
-                  vocabularies!.removeAt(index);
+                  _vocabularies!.removeAt(index);
                   cardExpanded = !cardExpanded;
-                  index = Random().nextInt(vocabularies!.length);
+                  index = Random().nextInt(_vocabularies!.length);
                 }
               });
             },
             icon: Icon(Icons.check),
             color: Color.fromRGBO(70, 195, 120, 1)),
+        IconButton(onPressed: (){
+          Navigator.push(context,MaterialPageRoute(builder: (context) => AddTopic(vocabulary: [vocab["text"].toString()]),));
+        }, icon: const Icon(Icons.save), color: Colors.grey,tooltip: "Save to Topic"),
         IconButton(
             onPressed: () {
               setState(() {
                 cardExpanded = !cardExpanded;
-                index = Random().nextInt(vocabularies!.length);
+                index = Random().nextInt(_vocabularies!.length);
               });
             },
             icon: Icon(Icons.close),
@@ -310,6 +332,8 @@ class _LearningSessionState extends State<LearningSession> {
           return InkWell(
             onTap: () {
               setState(() {
+                index = index;
+                _vocabularies = _vocabularies;
                 cardExpanded = !cardExpanded;
               });
             },
@@ -329,22 +353,32 @@ class _LearningSessionState extends State<LearningSession> {
         onSwipeCompleted: (swipeIndex, direction) {
           setState(() {
             if (direction == SwipeDirection.right) {
-              if (vocabularies!.length == 1) {
+              successfulVocabs++;
+              _vocabularies!.removeAt(index);
+              if (_vocabularies!.length == 0) {
                 Navigator.push(context,
                     MaterialPageRoute(builder: (context) => const Home()));
               }
+              else{
+                setState(() {
+                  index = Random().nextInt(_vocabularies!.length);
+                  cardExpanded = !cardExpanded;
+                  _vocabularies = _vocabularies;
+                  successfulVocabs = successfulVocabs;
+                });
+              }
             }
               else if (direction == SwipeDirection.left) {
-                successfulVocabs++;
-                vocabularies!.removeAt(index);
+                setState(() {
+                  cardExpanded = !cardExpanded;
+                  index = Random().nextInt(_vocabularies!.length);
+                });
               }
               else if (direction == SwipeDirection.down) {
                 setState(() {
-                  Navigator.push(context,MaterialPageRoute(builder: (context) => const AddTopic()));
+                  Navigator.push(context,MaterialPageRoute(builder: (context) => AddTopic(vocabulary: [vocab["text"].toString()]),));
                 });
               }
-            cardExpanded = !cardExpanded;
-            index = Random().nextInt(vocabularies!.length);
           });
         },
         detectableSwipeDirections: const {

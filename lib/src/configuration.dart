@@ -15,7 +15,7 @@ AppBar defaultAppBar() {
 }
 
 String backendAddress() {
-  return "10.0.2.2:5000";
+  return "85.215.233.210:5000";
 }
 
 List<IconData> allIcons() {
@@ -23,9 +23,6 @@ List<IconData> allIcons() {
 }
 
 List<IconData> iconDataList = [
-  CustomIcons.MyFlutterApp.duolingo_bird,
-  CustomIcons.MyFlutterApp.book_open,
-  CustomIcons.MyFlutterApp.google,
   CupertinoIcons.heart_fill,
   CupertinoIcons.star_fill,
   CupertinoIcons.circle_fill,

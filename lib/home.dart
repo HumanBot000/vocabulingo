@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:ffi';
+import 'package:flutter/cupertino.dart';
 import 'package:vocabulingo/learningSession.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -20,26 +21,72 @@ class Home extends StatefulWidget {
 List<dynamic> getAllTopics() {
   var box = Hive.box('topics');
   if (box.isEmpty) {
-    addTopic("All",Icons.abc.codePoint,);
+    addTopic("All", Icons.abc.codePoint);
   }
   return box.keys.toList();
 }
+List<dynamic> getAllVocabsInTopic(String topicName) {
+  var box = Hive.box('topics');
+  return box.get(topicName);
+}
+bool topicExists(String topicName) {
+  var box = Hive.box('topics');
+  return box.containsKey(topicName);
+}
 
+bool vocabIsInTopic(String topicName, String vocabulary) {
+  var box = Hive.box('topics');
+  List<dynamic> topicData = box.get(topicName);
+  for (dynamic item in topicData) {
+    if (item.toString() == [vocabulary].toString()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void removeVocabulariesFromTopic(String topicName, List<String>? vocabularies) {
+  var box = Hive.box('topics');
+  for (String vocabulary in vocabularies!) {
+    List<dynamic> list = box.get(topicName);
+    list.remove(vocabulary);
+    box.delete(topicName);
+    box.put(topicName, list);
+  }
+}
+bool topicIsEmpty(String topicName) {
+  var box = Hive.box('topics');
+  return box.get(topicName).isEmpty;
+}
+void deleteTopic(String topicName) {
+  var box = Hive.box('topics');
+  box.delete(topicName);
+}
 Icon getTopicIcon(String topicName) {
   var box = Hive.box('topicIcons');
-  return Icon(IconData(box.get(topicName),fontFamily: 'MaterialIcons'));
+  var iconCodePoint = box.get(topicName);
+  if (iconCodePoint != null) {
+    return Icon(
+      IconData(iconCodePoint,
+          fontFamily: CupertinoIcons.iconFont,
+          fontPackage: CupertinoIcons.iconFontPackage),
+    );
+  } else {
+    return const Icon(Icons.error);
+  }
 }
-void addTopic(String topicName,int icon) {
+
+void addTopic(String topicName, int icon) {
   var box = Hive.box('topics');
   var topicIconBox = Hive.box('topicIcons');
   box.put(topicName, []);
   topicIconBox.put(topicName, icon);
 }
 
-void addVocabularies(String topicName, List<String> vocabularies) {
+void addVocabulariesToTopic(String topicName, List<String>? vocabularies) {
   var box = Hive.box('topics');
-  for (String vocabulary in vocabularies) {
-    List<String> list = box.get(topicName);
+  for (String vocabulary in vocabularies!) {
+    List<dynamic> list = box.get(topicName);
     list.add(vocabulary);
     box.delete(topicName);
     box.put(topicName, list);
@@ -53,7 +100,7 @@ Future<List<Widget>> getOfficialTopicButtons() async {
       {"user": username, "jwt": jwt, "lang": readHive("activeLanguage")});
   List<Widget> children = [];
   var response = await http.post(
-      Uri.https(backendAddress(),"get_known_topics"),
+      Uri.https(backendAddress(), "get_known_topics"),
       body: body,
       headers: {
         "Accept": "application/json",
@@ -80,19 +127,32 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     List knownTopics = getAllTopics();
     List<Widget> children = [];
     for (String topic in knownTopics) {
-      children.add(ElevatedButton(
-        child: Text(topic, style: TextStyle(color: Colors.black, fontSize: 20)),
-        style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
-        onPressed: () {
-          setState(() {
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => LearningSession(topic: topic, vocabularies: const [], correctVocabularies: -1,index:-1),
-                ));
-          });
-        },
+      children.add(Row(
+        children: [
+          Expanded(
+            child: ElevatedButton(
+              child: Text(topic,
+                  style: TextStyle(color: Colors.black, fontSize: 20)),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
+              onPressed: () {
+                setState(() {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LearningSession(
+                            topic: topic,
+                            vocabularies: const [],
+                            correctVocabularies: -1,
+                            index: -1),
+                      ));
+                });
+              },
+            ),
+          ),
+          getTopicIcon(topic),
+        ],
       ));
+      children.add(const Divider());
     }
     return children;
   }

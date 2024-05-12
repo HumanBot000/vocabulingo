@@ -28,6 +28,8 @@ void main() async{
   await Hive.openBox('settings');
   await Hive.openBox('topics');
   await Hive.openBox('topicIcons');
+  //var box1 = Hive.box('topics').deleteFromDisk();
+  //var box2 = Hive.box('topicIcons').deleteFromDisk();
   //app
   runApp(
     ChangeNotifierProvider(
