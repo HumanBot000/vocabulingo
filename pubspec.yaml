@@ -19,7 +19,8 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 0.1.0
 
 environment:
-  sdk: '>=3.0.6 <4.0.0'
+  sdk: '>=3.2.0 <4.0.0'
+
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -38,14 +39,17 @@ dependencies:
   provider: ^6.0.5
   flutter_spinkit: ^5.1.0
   url_launcher: ^6.1.10
-  http: ^0.13.5
+  http: ^1.2.1
   intl: ^0.18.0
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   flutter_svg: ^2.0.5
   swipable_stack: ^2.0.0
-  flutter_launcher_icons: "^0.13.1"
+  flutter_launcher_icons: ^0.13.1
   just_audio: ^0.9.37
+  http_cache: ^1.0.0
+  flutter_cache_manager: ^3.3.2
+
 
 flutter_launcher_icons:
   android: "launcher_icon"

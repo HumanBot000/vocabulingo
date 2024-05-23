@@ -15,7 +15,7 @@ AppBar defaultAppBar() {
 }
 
 String backendAddress() {
-  return "85.215.233.210:5000";
+  return "192.168.8.164:5000";
 }
 
 List<IconData> allIcons() {
@@ -23,11 +23,13 @@ List<IconData> allIcons() {
 }
 
 List<IconData> iconDataList = [
+  CupertinoIcons.folder,
   CupertinoIcons.heart_fill,
   CupertinoIcons.star_fill,
   CupertinoIcons.circle_fill,
   CupertinoIcons.square_fill,
   CupertinoIcons.triangle_fill,
+  CupertinoIcons.number,
   CupertinoIcons.line_horizontal_3_decrease,
   CupertinoIcons.line_horizontal_3_decrease_circle,
   CupertinoIcons.circle_grid_hex,

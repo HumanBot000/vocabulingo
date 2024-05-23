@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:ffi';
+import 'dart:math';
 import 'package:flutter/cupertino.dart';
+import 'package:http_cache/http_cache.dart';
 import 'package:vocabulingo/learningSession.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -10,6 +12,10 @@ import 'package:vocabulingo/main.dart';
 import 'package:vocabulingo/src/configuration.dart';
 import 'package:vocabulingo/src/icons/my_flutter_app_icons.dart' as CustomIcons;
 import 'package:http/http.dart' as http;
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -92,7 +98,72 @@ void addVocabulariesToTopic(String topicName, List<String>? vocabularies) {
     box.put(topicName, list);
   }
 }
+Future<Map<String, dynamic>> getUserInfo() async {
+  var username = readHive("username");
+  var jwt = readHive("jwt");
+  var cacheKey = 'userInfo_${username}';
+  final cacheManager = DefaultCacheManager();
+  var fileInfo = await cacheManager.getFileFromCache(cacheKey);
+  if (fileInfo != null && fileInfo.file != null) {
+    final cachedData = await fileInfo.file.readAsString();
+    return json.decode(cachedData);
+  } else {
+    var body = jsonEncode({"user": username, "jwt": jwt});
+    var response = await http.post(
+      Uri.https(backendAddress(), "get_user_info"),
+      body: body,
+      headers: {
+        "Accept": "application/json",
+        "content-type": "application/json"
+      },
+    );
 
+    if (response.statusCode == 200) {
+      // Save the response in the cache
+      await cacheManager.putFile(
+        cacheKey,
+        response.bodyBytes,
+        fileExtension: 'json',
+        eTag: DateTime.now().toIso8601String(),
+      );
+    }
+
+    return json.decode(response.body);
+  }
+}
+Future<Map<String, dynamic>> getUserDailyXP() async {
+  var username = readHive("username");
+  var jwt = readHive("jwt");
+  var cacheKey = 'dailyXP_${username}';
+  final cacheManager = DefaultCacheManager();
+  var fileInfo = await cacheManager.getFileFromCache(cacheKey);
+  if (fileInfo != null && fileInfo.file != null) {
+    final cachedData = await fileInfo.file.readAsString();
+    return json.decode(cachedData);
+  } else {
+    var body = jsonEncode({"user": username, "jwt": jwt});
+    var response = await http.post(
+      Uri.https(backendAddress(), "get_daily_xp"),
+      body: body,
+      headers: {
+        "Accept": "application/json",
+        "content-type": "application/json"
+      },
+    );
+
+    if (response.statusCode == 200) {
+      // Save the response in the cache
+      await cacheManager.putFile(
+        cacheKey,
+        response.bodyBytes,
+        fileExtension: 'json',
+        eTag: DateTime.now().toIso8601String(),
+      );
+    }
+
+    return json.decode(response.body);
+  }
+}
 Future<List<Widget>> getOfficialTopicButtons() async {
   var username = readHive("username");
   var jwt = readHive("jwt");
@@ -122,6 +193,56 @@ Future<List<Widget>> getOfficialTopicButtons() async {
 
 class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   int currentPageIndex = 0;
+
+  Future<Widget> _infoBar() async {
+    var request = await getUserInfo();
+    var xp = request["language_data"][readHive("activeLanguage")]["points"]
+        .toString();
+    var streak = request["language_data"][readHive("activeLanguage")]["streak"]
+        .toString();
+    var dailyXPRequest = await getUserDailyXP();
+    var dailyXP = dailyXPRequest["xp_today"].toString();
+    var lessonsToday = dailyXPRequest["lessons_today"].length.toString();
+
+    return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          Column(
+            children: [
+              Row(
+                children: [
+                  Text("$xp XP"),
+                  Icon(Icons.leaderboard),
+                ],
+              ),
+              Row(
+                children: [
+                  Text("XP today: $dailyXP"),
+                  Icon(Icons.emoji_events, color: Colors.yellow.shade300),
+                ],
+              ),
+            ],
+          ),
+          Column(
+            children: [
+              Row(
+                children: [
+                  Text("Streak: $streak"),
+                  Icon(Icons.local_fire_department_rounded, color: Colors.orange),
+                ],
+      ),
+                Row(
+                  children: [
+                    Text("Lessons today: $lessonsToday"),
+                  ],
+              ),
+            ],
+          ),
+        ],
+    );
+  }
+
+
 
   List<Widget> getTopicButtons(BuildContext context) {
     List knownTopics = getAllTopics();
@@ -182,61 +303,128 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
           ),
           NavigationDestination(
             icon: Badge(
-              label: Text('2'),
               child: Icon(Icons.messenger_sharp),
             ),
             label: 'Something other',
           ),
         ],
       ),
-      body: <Widget>[
-        /// Vocabularies page
-        ListView(
-          children: getTopicButtons(context),
-        ),
-
-        /// Messages page
-        ListView.builder(
-          reverse: true,
-          itemCount: 2,
-          itemBuilder: (BuildContext context, int index) {
-            if (index == 0) {
-              return Align(
-                alignment: Alignment.centerRight,
-                child: Container(
-                  margin: const EdgeInsets.all(8.0),
-                  padding: const EdgeInsets.all(8.0),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    borderRadius: BorderRadius.circular(8.0),
+      body: CustomScrollView(
+        slivers: [
+          Expanded(
+            child: SliverAppBar(
+              backgroundColor: Colors.teal.shade100,
+              elevation: 200.0,
+              title: FutureBuilder(future: _infoBar(), builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return SpinKitFadingCircle(
+                        itemBuilder: (BuildContext context, int index) {
+                          return DecoratedBox(
+                            decoration: BoxDecoration(
+                                color: index.isEven
+                                    ? appPrimaryColor
+                                    : appSecondaryColor,
+                                shape: BoxShape.circle),
+                          );
+                        },
+                      );
+                    } else if (snapshot.hasError) {
+                      print(snapshot.error.toString());
+                      return Text(snapshot.error.toString());
+                    } else {
+                      return snapshot.data!;
+                    }
+                  }),
+              toolbarHeight: 50.0,
+              scrolledUnderElevation: 20.0,
+              floating: true,
+              snap: true,
+            ),
+          ),
+          SliverList(
+            delegate: SliverChildListDelegate(
+              [
+                if (currentPageIndex == 0)
+                  ListView(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    children: getTopicButtons(context),
                   ),
-                  child: Text(
-                    'Hello',
-                    style: theme.textTheme.bodyLarge!
-                        .copyWith(color: theme.colorScheme.onPrimary),
+                if (currentPageIndex == 1)
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    reverse: true,
+                    itemCount: 2,
+                    itemBuilder: (BuildContext context, int index) {
+                      if (index == 0) {
+                        return Align(
+                          alignment: Alignment.centerRight,
+                          child: Container(
+                            margin: const EdgeInsets.all(8.0),
+                            padding: const EdgeInsets.all(8.0),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary,
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            child: Text(
+                              'Hello',
+                              style: theme.textTheme.bodyLarge!
+                                  .copyWith(color: theme.colorScheme.onPrimary),
+                            ),
+                          ),
+                        );
+                      }
+                      return Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          margin: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(8.0),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary,
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: Text(
+                            'Hi!',
+                            style: theme.textTheme.bodyLarge!
+                                .copyWith(color: theme.colorScheme.onPrimary),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ),
-              );
-            }
-            return Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
-                margin: const EdgeInsets.all(8.0),
-                padding: const EdgeInsets.all(8.0),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: Text(
-                  'Hi!',
-                  style: theme.textTheme.bodyLarge!
-                      .copyWith(color: theme.colorScheme.onPrimary),
-                ),
-              ),
-            );
-          },
-        ),
-      ][currentPageIndex],
+                // Füge weitere Seiten für weitere Indizes hinzu
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
+
+class Badge extends StatelessWidget {
+  final Widget child;
+  final Widget? label;
+
+  const Badge({required this.child, this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.topRight,
+      children: [
+        child,
+        if (label != null)
+          Positioned(
+            right: 0,
+            child: CircleAvatar(
+              radius: 10,
+              child: label,
+            ),
+          ),
+      ],
+    );
+  }
+}
+

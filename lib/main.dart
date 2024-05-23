@@ -11,6 +11,8 @@ import 'dart:io';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:vocabulingo/src/configuration.dart';
 import 'package:vocabulingo/home.dart';
+
+
 class MyHttpOverrides extends HttpOverrides{
   @override
   HttpClient createHttpClient(SecurityContext? context){
@@ -18,19 +20,16 @@ class MyHttpOverrides extends HttpOverrides{
       ..badCertificateCallback = (X509Certificate cert, String host, int port)=> true;
   }
 }
-
-
-void main() async{
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   //http
   HttpOverrides.global = MyHttpOverrides();
-  //hive
   await Hive.initFlutter();
   await Hive.openBox('settings');
   await Hive.openBox('topics');
   await Hive.openBox('topicIcons');
-  //var box1 = Hive.box('topics').deleteFromDisk();
-  //var box2 = Hive.box('topicIcons').deleteFromDisk();
-  //app
+
+  // App starten
   runApp(
     ChangeNotifierProvider(
       create: (context) => AppState(),
@@ -38,6 +37,7 @@ void main() async{
     ),
   );
 }
+
 
 Future<String> _readHive(String key) async{
   var _settingsBox = Hive.box('settings');
