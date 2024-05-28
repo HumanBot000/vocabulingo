@@ -16,6 +16,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:vocabulingo/duolingoLogin.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -98,72 +99,8 @@ void addVocabulariesToTopic(String topicName, List<String>? vocabularies) {
     box.put(topicName, list);
   }
 }
-Future<Map<String, dynamic>> getUserInfo() async {
-  var username = readHive("username");
-  var jwt = readHive("jwt");
-  var cacheKey = 'userInfo_${username}';
-  final cacheManager = DefaultCacheManager();
-  var fileInfo = await cacheManager.getFileFromCache(cacheKey);
-  if (fileInfo != null && fileInfo.file != null) {
-    final cachedData = await fileInfo.file.readAsString();
-    return json.decode(cachedData);
-  } else {
-    var body = jsonEncode({"user": username, "jwt": jwt});
-    var response = await http.post(
-      Uri.https(backendAddress(), "get_user_info"),
-      body: body,
-      headers: {
-        "Accept": "application/json",
-        "content-type": "application/json"
-      },
-    );
 
-    if (response.statusCode == 200) {
-      // Save the response in the cache
-      await cacheManager.putFile(
-        cacheKey,
-        response.bodyBytes,
-        fileExtension: 'json',
-        eTag: DateTime.now().toIso8601String(),
-      );
-    }
 
-    return json.decode(response.body);
-  }
-}
-Future<Map<String, dynamic>> getUserDailyXP() async {
-  var username = readHive("username");
-  var jwt = readHive("jwt");
-  var cacheKey = 'dailyXP_${username}';
-  final cacheManager = DefaultCacheManager();
-  var fileInfo = await cacheManager.getFileFromCache(cacheKey);
-  if (fileInfo != null && fileInfo.file != null) {
-    final cachedData = await fileInfo.file.readAsString();
-    return json.decode(cachedData);
-  } else {
-    var body = jsonEncode({"user": username, "jwt": jwt});
-    var response = await http.post(
-      Uri.https(backendAddress(), "get_daily_xp"),
-      body: body,
-      headers: {
-        "Accept": "application/json",
-        "content-type": "application/json"
-      },
-    );
-
-    if (response.statusCode == 200) {
-      // Save the response in the cache
-      await cacheManager.putFile(
-        cacheKey,
-        response.bodyBytes,
-        fileExtension: 'json',
-        eTag: DateTime.now().toIso8601String(),
-      );
-    }
-
-    return json.decode(response.body);
-  }
-}
 Future<List<Widget>> getOfficialTopicButtons() async {
   var username = readHive("username");
   var jwt = readHive("jwt");
@@ -195,12 +132,12 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   int currentPageIndex = 0;
 
   Future<Widget> _infoBar() async {
-    var request = await getUserInfo();
+    var request = await httpCacheManager("userInfo_${readHive("username")}", "get_user_info");
     var xp = request["language_data"][readHive("activeLanguage")]["points"]
         .toString();
     var streak = request["language_data"][readHive("activeLanguage")]["streak"]
         .toString();
-    var dailyXPRequest = await getUserDailyXP();
+    var dailyXPRequest = await httpCacheManager("dailyXP_${readHive("username")}", "get_daily_xp");
     var dailyXP = dailyXPRequest["xp_today"].toString();
     var lessonsToday = dailyXPRequest["lessons_today"].length.toString();
 
@@ -311,35 +248,33 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       ),
       body: CustomScrollView(
         slivers: [
-          Expanded(
-            child: SliverAppBar(
-              backgroundColor: Colors.teal.shade100,
-              elevation: 200.0,
-              title: FutureBuilder(future: _infoBar(), builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return SpinKitFadingCircle(
-                        itemBuilder: (BuildContext context, int index) {
-                          return DecoratedBox(
-                            decoration: BoxDecoration(
-                                color: index.isEven
-                                    ? appPrimaryColor
-                                    : appSecondaryColor,
-                                shape: BoxShape.circle),
-                          );
-                        },
-                      );
-                    } else if (snapshot.hasError) {
-                      print(snapshot.error.toString());
-                      return Text(snapshot.error.toString());
-                    } else {
-                      return snapshot.data!;
-                    }
-                  }),
-              toolbarHeight: 50.0,
-              scrolledUnderElevation: 20.0,
-              floating: true,
-              snap: true,
-            ),
+          SliverAppBar(
+            backgroundColor: Colors.teal.shade100,
+            elevation: 200.0,
+            title: FutureBuilder(future: _infoBar(), builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return SpinKitFadingCircle(
+                      itemBuilder: (BuildContext context, int index) {
+                        return DecoratedBox(
+                          decoration: BoxDecoration(
+                              color: index.isEven
+                                  ? appPrimaryColor
+                                  : appSecondaryColor,
+                              shape: BoxShape.circle),
+                        );
+                      },
+                    );
+                  } else if (snapshot.hasError) {
+                    print(snapshot.error.toString());
+                    return Text(snapshot.error.toString());
+                  } else {
+                    return snapshot.data!;
+                  }
+                }),
+            toolbarHeight: 50.0,
+            scrolledUnderElevation: 20.0,
+            floating: true,
+            snap: true,
           ),
           SliverList(
             delegate: SliverChildListDelegate(

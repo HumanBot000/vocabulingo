@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:core';
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:vocabulingo/information/JWT.dart';
 import 'package:vocabulingo/languageSelector.dart';
@@ -18,6 +20,39 @@ class DuolingoLogin extends StatefulWidget {
   @override
   State<DuolingoLogin> createState() => _DuolingoLoginState();
 }
+Future<Map<String, dynamic>> httpCacheManager(String cacheKey,String urlEndpoint,{int deletionProbability = 10} ) async {
+  var username = readHive("username");
+  var jwt = readHive("jwt");
+  final cacheManager = DefaultCacheManager();
+  if (Random().nextInt(deletionProbability) == 0) {
+    await cacheManager.removeFile(cacheKey);
+  }
+  var fileInfo = await cacheManager.getFileFromCache(cacheKey);
+  if (fileInfo != null && fileInfo.file != null) {
+    final cachedData = await fileInfo.file.readAsString();
+    return json.decode(cachedData);
+  } else {
+    var body = jsonEncode({"user": username, "jwt": jwt});
+    var response = await http.post(
+      Uri.https(backendAddress(), urlEndpoint),
+      body: body,
+      headers: {
+        "Accept": "application/json",
+        "content-type": "application/json"
+      },
+    );
+    if (response.statusCode == 200) {
+      await cacheManager.putFile(
+        cacheKey,
+        response.bodyBytes,
+        fileExtension: 'json',
+        eTag: DateTime.now().toIso8601String(),
+      );
+    }
+
+    return json.decode(response.body);
+  }
+}
 
 Future<bool> checkDuolingoCredentials(String username, String jwt,{bool uiLanguage=false}) async {
   var body = jsonEncode({
@@ -30,7 +65,7 @@ Future<bool> checkDuolingoCredentials(String username, String jwt,{bool uiLangua
   "Accept": "application/json",
   "content-type": "application/json"
   });
-  if (response.statusCode == 200) {
+  if (response.statusCode == 200 || response.statusCode == 408) {
     if (uiLanguage){
         var response = await http
             .post(
