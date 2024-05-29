@@ -20,7 +20,7 @@ class DuolingoLogin extends StatefulWidget {
   @override
   State<DuolingoLogin> createState() => _DuolingoLoginState();
 }
-Future<Map<String, dynamic>> httpCacheManager(String cacheKey,String urlEndpoint,{int deletionProbability = 10} ) async {
+Future httpCacheManager(String cacheKey,String urlEndpoint,{int deletionProbability = 10,bool returnResponseCode = false}) async {
   var username = readHive("username");
   var jwt = readHive("jwt");
   final cacheManager = DefaultCacheManager();
@@ -41,6 +41,9 @@ Future<Map<String, dynamic>> httpCacheManager(String cacheKey,String urlEndpoint
         "content-type": "application/json"
       },
     );
+    if (returnResponseCode) {
+      return response.statusCode;
+    }
     if (response.statusCode == 200) {
       await cacheManager.putFile(
         cacheKey,
@@ -55,24 +58,11 @@ Future<Map<String, dynamic>> httpCacheManager(String cacheKey,String urlEndpoint
 }
 
 Future<bool> checkDuolingoCredentials(String username, String jwt,{bool uiLanguage=false}) async {
-  var body = jsonEncode({
-    "user": username,
-    "jwt": jwt //todo change backend so no jwt needs to be provided. I don't know if this is a good idea because of rate-limits. But I also know most people won't look for their jwt
-  });
-  var response = await http
-      .post(
-      Uri.https(backendAddress(),"check_credentials"), body: body,headers: {
-  "Accept": "application/json",
-  "content-type": "application/json"
-  });
-  if (response.statusCode == 200 || response.statusCode == 408) {
+  var responseCode = await httpCacheManager("first_open", "check_credentials",deletionProbability: 10,returnResponseCode: true);
+  if (responseCode == 200 || responseCode == 408) {
     if (uiLanguage){
-        var response = await http
-            .post(
-        Uri.https(backendAddress(),"get_ui_language"), body: body,headers: {"Accept": "application/json",
-        "content-type": "application/json"
-        });
-        writeHive("sourceLanguage", response.body);
+        var sourceLanguage = await httpCacheManager("source_language", "get_ui_language",deletionProbability: 20);
+        writeHive("sourceLanguage", sourceLanguage.body);
     }
     return true;
   } else {

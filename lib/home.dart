@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:ffi';
 import 'dart:math';
 import 'package:flutter/cupertino.dart';
-import 'package:http_cache/http_cache.dart';
 import 'package:vocabulingo/learningSession.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -12,11 +11,8 @@ import 'package:vocabulingo/main.dart';
 import 'package:vocabulingo/src/configuration.dart';
 import 'package:vocabulingo/src/icons/my_flutter_app_icons.dart' as CustomIcons;
 import 'package:http/http.dart' as http;
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
 import 'package:vocabulingo/duolingoLogin.dart';
+import 'package:vocabulingo/information/copyright.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -32,10 +28,12 @@ List<dynamic> getAllTopics() {
   }
   return box.keys.toList();
 }
+
 List<dynamic> getAllVocabsInTopic(String topicName) {
   var box = Hive.box('topics');
   return box.get(topicName);
 }
+
 bool topicExists(String topicName) {
   var box = Hive.box('topics');
   return box.containsKey(topicName);
@@ -61,14 +59,19 @@ void removeVocabulariesFromTopic(String topicName, List<String>? vocabularies) {
     box.put(topicName, list);
   }
 }
+
 bool topicIsEmpty(String topicName) {
   var box = Hive.box('topics');
-  return box.get(topicName).isEmpty;
+  return box
+      .get(topicName)
+      .isEmpty;
 }
+
 void deleteTopic(String topicName) {
   var box = Hive.box('topics');
   box.delete(topicName);
 }
+
 Icon getTopicIcon(String topicName) {
   var box = Hive.box('topicIcons');
   var iconCodePoint = box.get(topicName);
@@ -132,53 +135,54 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   int currentPageIndex = 0;
 
   Future<Widget> _infoBar() async {
-    var request = await httpCacheManager("userInfo_${readHive("username")}", "get_user_info");
+    var request = await httpCacheManager(
+        "userInfo_${readHive("username")}", "get_user_info");
     var xp = request["language_data"][readHive("activeLanguage")]["points"]
         .toString();
     var streak = request["language_data"][readHive("activeLanguage")]["streak"]
         .toString();
-    var dailyXPRequest = await httpCacheManager("dailyXP_${readHive("username")}", "get_daily_xp");
+    var dailyXPRequest = await httpCacheManager(
+        "dailyXP_${readHive("username")}", "get_daily_xp");
     var dailyXP = dailyXPRequest["xp_today"].toString();
     var lessonsToday = dailyXPRequest["lessons_today"].length.toString();
 
     return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          Column(
-            children: [
-              Row(
-                children: [
-                  Text("$xp XP"),
-                  Icon(Icons.leaderboard),
-                ],
-              ),
-              Row(
-                children: [
-                  Text("XP today: $dailyXP"),
-                  Icon(Icons.emoji_events, color: Colors.yellow.shade300),
-                ],
-              ),
-            ],
-          ),
-          Column(
-            children: [
-              Row(
-                children: [
-                  Text("Streak: $streak"),
-                  Icon(Icons.local_fire_department_rounded, color: Colors.orange),
-                ],
-      ),
-                Row(
-                  children: [
-                    Text("Lessons today: $lessonsToday"),
-                  ],
-              ),
-            ],
-          ),
-        ],
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        Column(
+          children: [
+            Row(
+              children: [
+                Text("$xp XP"),
+                Icon(Icons.leaderboard),
+              ],
+            ),
+            Row(
+              children: [
+                Text("XP today: $dailyXP"),
+                Icon(Icons.emoji_events, color: Colors.yellow.shade300),
+              ],
+            ),
+          ],
+        ),
+        Column(
+          children: [
+            Row(
+              children: [
+                Text("Streak: $streak"),
+                Icon(Icons.local_fire_department_rounded, color: Colors.orange),
+              ],
+            ),
+            Row(
+              children: [
+                Text("Lessons today: $lessonsToday"),
+              ],
+            ),
+          ],
+        ),
+      ],
     );
   }
-
 
 
   List<Widget> getTopicButtons(BuildContext context) {
@@ -197,11 +201,12 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => LearningSession(
-                            topic: topic,
-                            vocabularies: const [],
-                            correctVocabularies: -1,
-                            index: -1),
+                        builder: (context) =>
+                            LearningSession(
+                                topic: topic,
+                                vocabularies: const [],
+                                correctVocabularies: -1,
+                                index: -1),
                       ));
                 });
               },
@@ -240,9 +245,9 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
           ),
           NavigationDestination(
             icon: Badge(
-              child: Icon(Icons.messenger_sharp),
+              child: Icon(Icons.settings),
             ),
-            label: 'Something other',
+            label: 'Settings',
           ),
         ],
       ),
@@ -251,26 +256,30 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
           SliverAppBar(
             backgroundColor: Colors.teal.shade100,
             elevation: 200.0,
-            title: FutureBuilder(future: _infoBar(), builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return SpinKitFadingCircle(
-                      itemBuilder: (BuildContext context, int index) {
-                        return DecoratedBox(
-                          decoration: BoxDecoration(
-                              color: index.isEven
-                                  ? appPrimaryColor
-                                  : appSecondaryColor,
-                              shape: BoxShape.circle),
-                        );
-                      },
-                    );
-                  } else if (snapshot.hasError) {
-                    print(snapshot.error.toString());
-                    return Text(snapshot.error.toString());
-                  } else {
-                    return snapshot.data!;
-                  }
-                }),
+            title: FutureBuilder(
+              future: _infoBar(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return SpinKitFadingCircle(
+                    itemBuilder: (BuildContext context, int index) {
+                      return DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: index.isEven
+                              ? appPrimaryColor
+                              : appSecondaryColor,
+                          shape: BoxShape.circle,
+                        ),
+                      );
+                    },
+                  );
+                } else if (snapshot.hasError) {
+                  print(snapshot.error.toString());
+                  return Text(snapshot.error.toString());
+                } else {
+                  return snapshot.data!;
+                }
+              },
+            ),
             toolbarHeight: 50.0,
             scrolledUnderElevation: 20.0,
             floating: true,
@@ -328,13 +337,36 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                       );
                     },
                   ),
-                // Füge weitere Seiten für weitere Indizes hinzu
+                if (currentPageIndex == 2)
+                  ListView(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      Row(
+                        children: [
+                          ElevatedButton(
+                            child: const Text("Copyright"),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const Copyright(),
+                                ),
+                              );
+                            },
+                          ),
+                          Icon(Icons.copyright),
+                        ],
+                      ),
+                    ],
+                  ),
               ],
             ),
           ),
         ],
       ),
     );
+
   }
 }
 
