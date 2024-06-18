@@ -45,16 +45,13 @@ Future<dynamic> httpCacheManager(String cacheKey, String urlEndpoint,
   if ((deletionProbability == 0 ||
       Random().nextInt(deletionProbability) == 1) &&
       await checkBackendConnection()) {
-    print("deleting $cacheKey");
     await cacheManager.removeFile(cacheKey);
   }
 
   var fileInfo = await cacheManager.getFileFromCache(cacheKey);
-  print('File Info: $fileInfo');
 
   if (fileInfo != null) {
     final cachedData = await fileInfo.file.readAsString();
-    print('Returning cached data for $cacheKey');
     if (returnResponseCode) {
       return 200;
     }
@@ -86,7 +83,6 @@ Future<dynamic> httpCacheManager(String cacheKey, String urlEndpoint,
         eTag: DateTime.now().toIso8601String(),
       );
     } else {
-      print('Failed to fetch data: ${response.statusCode}');
     }
 
     if (formatAsJson) {

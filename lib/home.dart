@@ -1,12 +1,11 @@
 import 'dart:convert';
-import 'dart:ffi';
-import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:vocabulingo/learningSession.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:hive/hive.dart';
-import 'package:provider/provider.dart';
+
 import 'package:vocabulingo/main.dart';
 import 'package:vocabulingo/src/configuration.dart';
 import 'package:vocabulingo/src/icons/my_flutter_app_icons.dart' as CustomIcons;
@@ -62,9 +61,7 @@ void removeVocabulariesFromTopic(String topicName, List<String>? vocabularies) {
 
 bool topicIsEmpty(String topicName) {
   var box = Hive.box('topics');
-  return box
-      .get(topicName)
-      .isEmpty;
+  return box.get(topicName).isEmpty;
 }
 
 void deleteTopic(String topicName) {
@@ -103,7 +100,6 @@ void addVocabulariesToTopic(String topicName, List<String>? vocabularies) {
   }
 }
 
-
 Future<List<Widget>> getOfficialTopicButtons() async {
   var username = readHive("username");
   var jwt = readHive("jwt");
@@ -124,7 +120,8 @@ Future<List<Widget>> getOfficialTopicButtons() async {
   for (String topic in knownTopics) {
     children.add(ElevatedButton(
       onPressed: () {},
-      child: Text(topic, style: const TextStyle(color: Colors.black, fontSize: 20)),
+      child: Text(topic,
+          style: const TextStyle(color: Colors.black, fontSize: 20)),
       style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
     ));
   }
@@ -137,9 +134,14 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   Future<Widget> _infoBar() async {
     bool isConnected = await checkBackendConnection();
     if (!isConnected) {
-      return const Row(children: [
-        Text("Offline, currently using cached data", style: TextStyle(color: Colors.red),),
-      ],);
+      return const Row(
+        children: [
+          Text(
+            "Offline, currently using cached data",
+            style: TextStyle(color: Colors.red),
+          ),
+        ],
+      );
     }
     var request = await httpCacheManager(
         "userInfo_${readHive("username")}", "get_user_info");
@@ -176,7 +178,8 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
             Row(
               children: [
                 Text("Streak: $streak"),
-                const Icon(Icons.local_fire_department_rounded, color: Colors.orange),
+                const Icon(Icons.local_fire_department_rounded,
+                    color: Colors.orange),
               ],
             ),
             Row(
@@ -189,7 +192,6 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       ],
     );
   }
-
 
   List<Widget> getTopicButtons(BuildContext context) {
     List knownTopics = getAllTopics();
@@ -207,12 +209,11 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            LearningSession(
-                                topic: topic,
-                                vocabularies: const [],
-                                correctVocabularies: -1,
-                                index: -1),
+                        builder: (context) => LearningSession(
+                            topic: topic,
+                            vocabularies: const [],
+                            correctVocabularies: -1,
+                            index: -1),
                       ));
                 });
               },
@@ -279,7 +280,6 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                     },
                   );
                 } else if (snapshot.hasError) {
-                  print(snapshot.error.toString());
                   return Text(snapshot.error.toString());
                 } else {
                   return snapshot.data!;
@@ -372,7 +372,6 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         ],
       ),
     );
-
   }
 }
 
@@ -400,4 +399,3 @@ class Badge extends StatelessWidget {
     );
   }
 }
-
