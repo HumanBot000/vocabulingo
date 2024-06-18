@@ -124,7 +124,7 @@ Future<List<Widget>> getOfficialTopicButtons() async {
   for (String topic in knownTopics) {
     children.add(ElevatedButton(
       onPressed: () {},
-      child: Text(topic, style: TextStyle(color: Colors.black, fontSize: 20)),
+      child: Text(topic, style: const TextStyle(color: Colors.black, fontSize: 20)),
       style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
     ));
   }
@@ -135,6 +135,12 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   int currentPageIndex = 0;
 
   Future<Widget> _infoBar() async {
+    bool isConnected = await checkBackendConnection();
+    if (!isConnected) {
+      return const Row(children: [
+        Text("Offline, currently using cached data", style: TextStyle(color: Colors.red),),
+      ],);
+    }
     var request = await httpCacheManager(
         "userInfo_${readHive("username")}", "get_user_info");
     var xp = request["language_data"][readHive("activeLanguage")]["points"]
@@ -154,7 +160,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
             Row(
               children: [
                 Text("$xp XP"),
-                Icon(Icons.leaderboard),
+                const Icon(Icons.leaderboard),
               ],
             ),
             Row(
@@ -170,7 +176,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
             Row(
               children: [
                 Text("Streak: $streak"),
-                Icon(Icons.local_fire_department_rounded, color: Colors.orange),
+                const Icon(Icons.local_fire_department_rounded, color: Colors.orange),
               ],
             ),
             Row(
@@ -194,7 +200,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
           Expanded(
             child: ElevatedButton(
               child: Text(topic,
-                  style: TextStyle(color: Colors.black, fontSize: 20)),
+                  style: const TextStyle(color: Colors.black, fontSize: 20)),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
               onPressed: () {
                 setState(() {
@@ -291,13 +297,13 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                 if (currentPageIndex == 0)
                   ListView(
                     shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
+                    physics: const NeverScrollableScrollPhysics(),
                     children: getTopicButtons(context),
                   ),
                 if (currentPageIndex == 1)
                   ListView.builder(
                     shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
+                    physics: const NeverScrollableScrollPhysics(),
                     reverse: true,
                     itemCount: 2,
                     itemBuilder: (BuildContext context, int index) {
@@ -355,7 +361,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                               );
                             },
                           ),
-                          Icon(Icons.copyright),
+                          const Icon(Icons.copyright),
                         ],
                       ),
                     ],

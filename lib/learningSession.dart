@@ -6,6 +6,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:vocabulingo/addTopic.dart';
+import 'package:vocabulingo/duolingoLogin.dart';
 import 'package:vocabulingo/home.dart';
 import 'package:vocabulingo/main.dart';
 import 'package:vocabulingo/src/configuration.dart';
@@ -16,18 +17,19 @@ import 'dart:math' as math;
 import 'package:just_audio/just_audio.dart';
 
 class LearningSession extends StatefulWidget {
-  const LearningSession({
-    Key? key,
-    required this.topic,
-    required this.vocabularies,
-    required this.correctVocabularies,
-    required this.index
-  }) : super(key: key);
+  const LearningSession(
+      {Key? key,
+      required this.topic,
+      required this.vocabularies,
+      required this.correctVocabularies,
+      required this.index})
+      : super(key: key);
 
   final String topic;
   final List<dynamic> vocabularies;
   final int correctVocabularies;
   final int index;
+
   @override
   State<LearningSession> createState() => _LearningSessionState();
 }
@@ -39,38 +41,26 @@ class _LearningSessionState extends State<LearningSession> {
   int allVocabs = 0;
   int successfulVocabs = 0;
   final audioPlayer = AudioPlayer();
+
   @override
   void initState() {
     super.initState();
     if (widget.correctVocabularies == -1) {
       loadVocabularies();
-    }
-    else{
+    } else {
       index = widget.index;
       allVocabs = widget.vocabularies.length;
       successfulVocabs = widget.correctVocabularies;
     }
   }
 
-  Future<void> loadVocabularies() async {
-    var username = readHive("username");
-    var jwt = readHive("jwt");
-    var lang = readHive("activeLanguage");
-    var body = jsonEncode({"user": username, "jwt": jwt, "lang": lang});
-    var response = await http.post(
-      Uri.https(backendAddress(), "get_vocabularies"),
-      body: body,
-      headers: {
-        "Accept": "application/json",
-        "content-type": "application/json",
-      },
-    );
-    if (response.statusCode == 401) {
-      throw "unauthorized";
-    }
-    List<dynamic> fetchedVocabularies = json.decode(response.body);
-    fetchedVocabularies.shuffle();
 
+  Future<void> loadVocabularies() async {
+    var response = await httpCacheManager("vocabularies", "get_vocabularies",
+        formatAsJson: false);
+    List<dynamic> fetchedVocabularies = json.decode(
+        response.replaceAll("True", "true").replaceAll("False", "false"));
+    fetchedVocabularies.shuffle();
     setState(() {
       _vocabularies = fetchedVocabularies;
     });
@@ -99,9 +89,7 @@ class _LearningSessionState extends State<LearningSession> {
       for (dynamic vocab in _vocabularies!) {
         if (!vocabIsInTopic(topic, vocab["text"])) {
           tempVocabularies.remove(vocab);
-        }
-        else{
-        }
+        } else {}
       }
     }
 
@@ -259,6 +247,10 @@ class _LearningSessionState extends State<LearningSession> {
           title: Text(translations.join(",")),
         ),
       );
+      children.add(ListTile(
+        title: Text("Related Words ${vocab['related_words'][0]}"),
+      ));
+
       children.add(ButtonBar(alignment: MainAxisAlignment.center, children: [
         IconButton(
             onPressed: () {
@@ -276,9 +268,18 @@ class _LearningSessionState extends State<LearningSession> {
             },
             icon: Icon(Icons.check),
             color: Color.fromRGBO(70, 195, 120, 1)),
-        IconButton(onPressed: (){
-          Navigator.push(context,MaterialPageRoute(builder: (context) => AddTopic(vocabulary: [vocab["text"].toString()]),));
-        }, icon: const Icon(Icons.save), color: Colors.grey,tooltip: "Save to Topic"),
+        IconButton(
+            onPressed: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        AddTopic(vocabulary: [vocab["text"].toString()]),
+                  ));
+            },
+            icon: const Icon(Icons.save),
+            color: Colors.grey,
+            tooltip: "Save to Topic"),
         IconButton(
             onPressed: () {
               setState(() {
@@ -303,21 +304,17 @@ class _LearningSessionState extends State<LearningSession> {
               opacity: isRight ? opacity : 0,
               child: CardLabel.right(),
             );
-          }
-          else if (isLeft) {
+          } else if (isLeft) {
             return Opacity(
               opacity: isLeft ? opacity : 0,
               child: CardLabel.left(),
             );
-          }
-            else if (isUp) {
-              return Opacity(
-
-                opacity: isUp ? opacity : 0,
-                child: CardLabel.up(),
-              );
-            }
-          else if (isDown) {
+          } else if (isUp) {
+            return Opacity(
+              opacity: isUp ? opacity : 0,
+              child: CardLabel.up(),
+            );
+          } else if (isDown) {
             return Opacity(
               opacity: isDown ? opacity : 0,
               child: CardLabel.down(),
@@ -358,8 +355,7 @@ class _LearningSessionState extends State<LearningSession> {
               if (_vocabularies!.length == 0) {
                 Navigator.push(context,
                     MaterialPageRoute(builder: (context) => const Home()));
-              }
-              else{
+              } else {
                 setState(() {
                   index = Random().nextInt(_vocabularies!.length);
                   cardExpanded = !cardExpanded;
@@ -367,18 +363,21 @@ class _LearningSessionState extends State<LearningSession> {
                   successfulVocabs = successfulVocabs;
                 });
               }
+            } else if (direction == SwipeDirection.left) {
+              setState(() {
+                cardExpanded = !cardExpanded;
+                index = Random().nextInt(_vocabularies!.length);
+              });
+            } else if (direction == SwipeDirection.down) {
+              setState(() {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          AddTopic(vocabulary: [vocab["text"].toString()]),
+                    ));
+              });
             }
-              else if (direction == SwipeDirection.left) {
-                setState(() {
-                  cardExpanded = !cardExpanded;
-                  index = Random().nextInt(_vocabularies!.length);
-                });
-              }
-              else if (direction == SwipeDirection.down) {
-                setState(() {
-                  Navigator.push(context,MaterialPageRoute(builder: (context) => AddTopic(vocabulary: [vocab["text"].toString()]),));
-                });
-              }
           });
         },
         detectableSwipeDirections: const {

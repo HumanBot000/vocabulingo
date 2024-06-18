@@ -20,49 +20,88 @@ class DuolingoLogin extends StatefulWidget {
   @override
   State<DuolingoLogin> createState() => _DuolingoLoginState();
 }
-Future httpCacheManager(String cacheKey,String urlEndpoint,{int deletionProbability = 10,bool returnResponseCode = false}) async {
+Future<bool> checkBackendConnection() async {
+  try {
+    var request = await http.get(Uri.https(backendAddress(), "test"));
+    return request.statusCode == 200;
+  }
+  catch (e){
+    return false;
+  }
+}
+Future<dynamic> httpCacheManager(String cacheKey, String urlEndpoint,
+    {int deletionProbability = 10,
+      bool returnResponseCode = false,
+      bool formatAsJson = true,
+      customBody = null}) async {
   var username = readHive("username");
   var jwt = readHive("jwt");
+  var language = readHive("activeLanguage");
   final cacheManager = DefaultCacheManager();
-  if (Random().nextInt(deletionProbability) == 0) {
+
+  // Entfernen für Debug-Zwecke
+  // await cacheManager.removeFile(cacheKey);
+
+  if ((deletionProbability == 0 ||
+      Random().nextInt(deletionProbability) == 1) &&
+      await checkBackendConnection()) {
+    print("deleting $cacheKey");
     await cacheManager.removeFile(cacheKey);
   }
+
   var fileInfo = await cacheManager.getFileFromCache(cacheKey);
-  if (fileInfo != null && fileInfo.file != null) {
+  print('File Info: $fileInfo');
+
+  if (fileInfo != null) {
     final cachedData = await fileInfo.file.readAsString();
-    return json.decode(cachedData);
+    print('Returning cached data for $cacheKey');
+    if (returnResponseCode) {
+      return 200;
+    }
+    if (formatAsJson) {
+      return json.decode(cachedData);
+    }
+    return cachedData;
   } else {
-    var body = jsonEncode({"user": username, "jwt": jwt});
+    var body = jsonEncode({"user": username, "jwt": jwt, "lang": language});
     var response = await http.post(
       Uri.https(backendAddress(), urlEndpoint),
-      body: body,
+      body: customBody ?? body,
       headers: {
         "Accept": "application/json",
         "content-type": "application/json"
       },
     );
+
     if (returnResponseCode) {
       return response.statusCode;
     }
+
     if (response.statusCode == 200) {
+      print('Caching response for $cacheKey');
       await cacheManager.putFile(
         cacheKey,
         response.bodyBytes,
         fileExtension: 'json',
         eTag: DateTime.now().toIso8601String(),
       );
+    } else {
+      print('Failed to fetch data: ${response.statusCode}');
     }
 
-    return json.decode(response.body);
+    if (formatAsJson) {
+      return json.decode(response.body);
+    }
+    return response.body;
   }
 }
 
-Future<bool> checkDuolingoCredentials(String username, String jwt,{bool uiLanguage=false}) async {
-  var responseCode = await httpCacheManager("first_open", "check_credentials",deletionProbability: 10,returnResponseCode: true);
-  if (responseCode == 200 || responseCode == 408) {
+Future<bool> checkDuolingoCredentials(String username, String jwt,{bool uiLanguage=false,int deletionProbability = 20}) async {
+  var response = await http.post(Uri.https(backendAddress(), "check_credentials"), body: jsonEncode({"user": username, "jwt": jwt}),headers: {"Accept": "application/json", "content-type": "application/json"});
+  if (response.statusCode == 200 || response.statusCode == 408) {
     if (uiLanguage){
-        var sourceLanguage = await httpCacheManager("source_language", "get_ui_language",deletionProbability: 20);
-        writeHive("sourceLanguage", sourceLanguage.body);
+        var sourceLanguage = await httpCacheManager("source_language", "get_ui_language",deletionProbability: deletionProbability,customBody: jsonEncode({"user": username, "jwt": jwt}));
+        writeHive("sourceLanguage", sourceLanguage["ui_language"]);
     }
     return true;
   } else {
@@ -196,7 +235,7 @@ class _DuolingoLoginState extends State<DuolingoLogin> {
                     if (_usernameController.text.isNotEmpty &&
                         _passwordController.text.isNotEmpty) {
                       checkDuolingoCredentials(uiLanguage: true,
-                          _usernameController.text, _passwordController.text)
+                          _usernameController.text, _passwordController.text,deletionProbability: 0)
                           .then((value) {
                         if (value) {
                           loginSuccess(_usernameController.text, _passwordController.text);
