@@ -14,17 +14,32 @@ import 'package:http/http.dart' as http;
 import 'dart:math' as math;
 
 class AddTopic extends StatefulWidget {
-  const AddTopic({Key? key, required this.vocabulary}) : super(key: key);
+  const AddTopic({Key? key, required this.vocabulary, this.name})
+      : super(key: key);
 
   final List<String> vocabulary;
+  final String? name;
 
   @override
   State<AddTopic> createState() => _AddTopicState();
 }
 
 class _AddTopicState extends State<AddTopic> {
-  late TextEditingController textFieldController = TextEditingController();
-  late IconData currentSelectedIcon = allIcons()[0];
+
+  late TextEditingController textFieldController;
+  late IconData currentSelectedIcon;
+
+  @override
+  void initState() {
+    super.initState();
+    textFieldController = TextEditingController();
+    currentSelectedIcon = allIcons()[0];
+
+    if (widget.name != null) {
+      textFieldController.text = widget.name!;
+    }
+  }
+
   List<Widget> _getTopicButtons() {
     List<Widget> children = [];
     for (String topic in getAllTopics()) {
@@ -36,15 +51,19 @@ class _AddTopicState extends State<AddTopic> {
                   backgroundColor: Colors.greenAccent.shade700),
               onPressed: () {
                 setState(() {
-                  if (vocabIsInTopic(topic, widget.vocabulary.toString().substring(1, widget.vocabulary.toString().length - 1))) {
+                  if (vocabIsInTopic(
+                      topic,
+                      widget.vocabulary.toString().substring(
+                          1, widget.vocabulary
+                          .toString()
+                          .length - 1))) {
                     showDialog(
                         context: context,
                         builder: (context) =>
                             AlertDialog(
                                 title: const Text(
                                     "This vocabulary is already in this topic"),
-                                content:
-                                const Text(
+                                content: const Text(
                                     "Do you want to remove it from that topic?"),
                                 actions: [
                                   ElevatedButton(
@@ -61,15 +80,12 @@ class _AddTopicState extends State<AddTopic> {
                                         Navigator.pop(context);
                                       },
                                       child: const Text("Remove")),
-                                ]
-                            )
-                    );
-                  }
-                    else{
-                    addVocabulariesToTopic(topic, [widget.vocabulary.toString()]);
+                                ]));
+                  } else {
+                    addVocabulariesToTopic(
+                        topic, [widget.vocabulary.toString()]);
                     Navigator.pop(context);
                   }
-
                 });
               },
               child: Text(topic,
@@ -128,39 +144,42 @@ class _AddTopicState extends State<AddTopic> {
                 builder: (context) =>
                     AlertDialog(
                         title: const Text("Error"),
-                        content:
-                        const Text("Topic already exists"),
+                        content: const Text("Topic already exists"),
                         actions: [
                           ElevatedButton(
                               onPressed: () => Navigator.pop(context),
-                              child: const Text("Ok"))
+                              child: const Text("Ok")),
+                          ElevatedButton(onPressed: () {
+                            addVocabulariesToTopic(
+                                textFieldController.text, [widget.vocabulary
+                                .toString()
+                            ]);
+                            Navigator.pop(context);
+                            Navigator.pop(context);
+                          }, child: const Text("Add to Topic"))
                         ]));
-          }
-          else {
+          } else {
             addTopic(textFieldController.text, currentSelectedIcon.codePoint);
-            addVocabulariesToTopic(textFieldController.text, [widget.vocabulary.toString()]);
+            addVocabulariesToTopic(
+                textFieldController.text, [widget.vocabulary.toString()]);
             Navigator.pop(context);
           }
-
-        }
-        else{
+        } else {
           showDialog(
               context: context,
               builder: (context) =>
                   AlertDialog(
                       title: const Text("Error"),
-                      content:
-                      const Text("Please enter a topic name"),
+                      content: const Text("Please enter a topic name"),
                       actions: [
                         ElevatedButton(
                             onPressed: () => Navigator.pop(context),
                             child: const Text("Ok"))
                       ]));
         }
-        },
+      },
       child: const Icon(Icons.add),
-    )
-    );
+    ));
     return children;
   }
 

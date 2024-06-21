@@ -255,7 +255,7 @@ class _LearningSessionState extends State<LearningSession> {
       );
       if (vocab.containsKey("related_words")) {
         children.add(ListTile(
-          title: Text("Related Group: ${vocab['related_words']["title"]}"),
+          title: Text("Word category: ${vocab['related_words']["title"]}"),
         ));
 
       }
@@ -282,11 +282,15 @@ class _LearningSessionState extends State<LearningSession> {
           ),
           IconButton(
             onPressed: () {
+              var _categoryName = null;
+              if (vocab.containsKey("related_words")) {
+                _categoryName = vocab["related_words"]["title"];
+              }
               Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) =>
-                        AddTopic(vocabulary: [vocab["text"].toString()]),
+                        AddTopic(vocabulary: [vocab["text"].toString()], name: _categoryName),
                   ));
             },
             icon: const Icon(Icons.save),
