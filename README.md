@@ -2,15 +2,15 @@
 
 Vocabulingo is an Vocabulary learn APP connected to your Duolingo account.
 
-## Basic Principals
+## Basic Principles
 
-Learn A Language in duolingo and study vocabularies in vocabulingo with the use of index cards
+Learn a language in Duolingo and study vocabularies in Vocabulingo with the use of index cards.
 
 ![login](https://github.com/HumanBot000/vocabulingo/blob/V0.3/presentation/Duolingo%20Login.png)
-![Home Page](https://github.com/HumanBot000/vocabulingo/tree/master/presentation/Home%20Page.png)
-![Unsolved Word](https://github.com/HumanBot000/vocabulingo/tree/master/presentation/Unsolved%20Word.png)
-![Solved Word](https://github.com/HumanBot000/vocabulingo/tree/master/presentation/Solved%20Word.png)
-![Sort words in Topics](https://github.com/HumanBot000/vocabulingo/tree/master/presentation/Sort%20in%20Topics.png)
+![Home Page](https://github.com/HumanBot000/vocabulingo/blob/master/presentation/Home%20Page.png)
+![Unsolved Word](https://github.com/HumanBot000/vocabulingo/blob/master/presentation/Unsolved%20Word.png)
+![Solved Word](https://github.com/HumanBot000/vocabulingo/blob/master/presentation/Solved%20Word.png)
+![Sort words in Topics](https://github.com/HumanBot000/vocabulingo/blob/master/presentation/Sort%20in%20Topics.png)
 
 ## Instructions
 # What's my jwt?
