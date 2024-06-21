@@ -15,14 +15,102 @@ import 'package:http/http.dart' as http;
 import 'package:swipable_stack/swipable_stack.dart';
 import 'dart:math' as math;
 import 'package:just_audio/just_audio.dart';
+Widget getSourceLanguageSVGPath({double width = 20.0, double height = 20.0}) {
+  var language = readHive("sourceLanguage");
+  List<String> supportedLanguages = [
+    "ae",
+    "ch",
+    "de",
+    "cz",
+    "dk",
+    "es",
+    "fr",
+    "gr",
+    "gb",
+    "it",
+    "nl",
+    "ie",
+    "il",
+    "in",
+    "jp",
+    "kr",
+    "no",
+    "pl",
+    "pt",
+    "ro",
+    "ru",
+    "se",
+    "ch",
+    "tr",
+    "ua",
+    "us",
+    "vn"
+  ];
+  if (supportedLanguages.contains(language)) {
+    return SvgPicture.asset(
+      "lib/src/svg/${language}.svg",
+      height: height,
+      width: width,
+    );
+  }
+  return SvgPicture.asset(
+    "lib/src/svg/xx.svg",
+    height: width,
+    width: height,
+  );
+}
 
+Widget getActiveLanguageSVGPath({double width = 20.0, double height = 20.0}) {
+  var language = readHive("activeLanguage");
+  List<String> supportedLanguages = [
+    "ae",
+    "de",
+    "ch",
+    "cz",
+    "dk",
+    "es",
+    "fr",
+    "gr",
+    "gb",
+    "it",
+    "nl",
+    "ie",
+    "il",
+    "in",
+    "jp",
+    "kr",
+    "no",
+    "pl",
+    "pt",
+    "ro",
+    "ru",
+    "se",
+    "ch",
+    "tr",
+    "ua",
+    "us",
+    "vn"
+  ];
+  if (supportedLanguages.contains(language)) {
+    return SvgPicture.asset(
+      "lib/src/svg/${language}.svg",
+      height: height,
+      width: width,
+    );
+  }
+  return SvgPicture.asset(
+    "lib/src/svg/xx.svg",
+    height: width,
+    width: height,
+  );
+}
 class LearningSession extends StatefulWidget {
   const LearningSession(
       {Key? key,
-      required this.topic,
-      required this.vocabularies,
-      required this.correctVocabularies,
-      required this.index})
+        required this.topic,
+        required this.vocabularies,
+        required this.correctVocabularies,
+        required this.index})
       : super(key: key);
 
   final String topic;
@@ -48,12 +136,12 @@ class _LearningSessionState extends State<LearningSession> {
     if (widget.correctVocabularies == -1) {
       loadVocabularies();
     } else {
+      _vocabularies = widget.vocabularies;
       index = widget.index;
       allVocabs = widget.vocabularies.length;
       successfulVocabs = widget.correctVocabularies;
     }
   }
-
 
   Future<void> loadVocabularies() async {
     var response = await httpCacheManager("vocabularies", "get_vocabularies",
@@ -84,119 +172,36 @@ class _LearningSessionState extends State<LearningSession> {
   }
 
   Widget allVocabSession(String topic) {
+    if (_vocabularies == null) {
+      return Container();
+    }
     List<dynamic> tempVocabularies = List.from(_vocabularies!);
     if (topic != "All") {
       for (dynamic vocab in _vocabularies!) {
         if (!vocabIsInTopic(topic, vocab["text"])) {
           tempVocabularies.remove(vocab);
-        } else {}
+        }
       }
     }
-
     _vocabularies = tempVocabularies;
     if (allVocabs == 0) {
       allVocabs = tempVocabularies.length;
     }
+
     if (tempVocabularies.isNotEmpty) {
-      return vocabCard(_vocabularies![index]);
+      if (index >= 0 && index < _vocabularies!.length) {
+        return vocabCard(_vocabularies![index]);
+      } else {
+        return Container();
+      }
     } else {
       return Container();
     }
   }
 
-  Widget getSourceLanguageSVGPath({double width = 20.0, double height = 20.0}) {
-    var language = readHive("sourceLanguage");
-    List<String> supportedLanguages = [
-      "ae",
-      "ch",
-      "de",
-      "cz",
-      "dk",
-      "es",
-      "fr",
-      "gr",
-      "gb",
-      "it",
-      "nl",
-      "ie",
-      "il",
-      "in",
-      "jp",
-      "kr",
-      "no",
-      "pl",
-      "pt",
-      "ro",
-      "ru",
-      "se",
-      "ch",
-      "tr",
-      "ua",
-      "us",
-      "vn"
-    ];
-    if (supportedLanguages.contains(language)) {
-      return SvgPicture.asset(
-        "lib/src/svg/${language}.svg",
-        height: height,
-        width: width,
-      );
-    }
-    return SvgPicture.asset(
-      "lib/src/svg/xx.svg",
-      height: width,
-      width: height,
-    );
-  }
-
-  Widget getActiveLanguageSVGPath({double width = 20.0, double height = 20.0}) {
-    var language = readHive("activeLanguage");
-    List<String> supportedLanguages = [
-      "ae",
-      "de",
-      "ch",
-      "cz",
-      "dk",
-      "es",
-      "fr",
-      "gr",
-      "gb",
-      "it",
-      "nl",
-      "ie",
-      "il",
-      "in",
-      "jp",
-      "kr",
-      "no",
-      "pl",
-      "pt",
-      "ro",
-      "ru",
-      "se",
-      "ch",
-      "tr",
-      "ua",
-      "us",
-      "vn"
-    ];
-    if (supportedLanguages.contains(language)) {
-      return SvgPicture.asset(
-        "lib/src/svg/${language}.svg",
-        height: height,
-        width: width,
-      );
-    }
-    return SvgPicture.asset(
-      "lib/src/svg/xx.svg",
-      height: width,
-      width: height,
-    );
-  }
-
   Widget vocabCard(dynamic vocab) {
     List<Widget> children = [];
-    if (cardExpanded == false) {
+    if (!cardExpanded) {
       children = [
         Text("$successfulVocabs / $allVocabs"),
         getActiveLanguageSVGPath(width: 100.0, height: 100.0),
@@ -218,12 +223,13 @@ class _LearningSessionState extends State<LearningSession> {
             children: [
               Text(vocab["text"]),
               IconButton(
-                  onPressed: () {
-                    audioPlayer.setUrl(vocab["audioURL"]);
-                    audioPlayer.play();
-                  },
-                  icon: Icon(Icons.play_arrow_rounded),
-                  color: Color.fromRGBO(41, 59, 51, 1.0))
+                onPressed: () {
+                  audioPlayer.setUrl(vocab["audioURL"]);
+                  audioPlayer.play();
+                },
+                icon: Icon(Icons.play_arrow_rounded),
+                color: Color.fromRGBO(41, 59, 51, 1.0),
+              )
             ],
           ),
           subtitle: Text(
@@ -247,17 +253,22 @@ class _LearningSessionState extends State<LearningSession> {
           title: Text(translations.join(",")),
         ),
       );
-      children.add(ListTile(
-        title: Text("Related Words ${vocab['related_words'][0]}"),
-      ));
+      if (vocab.containsKey("related_words")) {
+        children.add(ListTile(
+          title: Text("Related Group: ${vocab['related_words']["title"]}"),
+        ));
 
-      children.add(ButtonBar(alignment: MainAxisAlignment.center, children: [
-        IconButton(
+      }
+
+      children.add(ButtonBar(
+        alignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
             onPressed: () {
               setState(() {
                 if (_vocabularies!.length == 1) {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => const Home()));
+                  Navigator.push(
+                      context, MaterialPageRoute(builder: (context) => const Home()));
                 } else {
                   successfulVocabs++;
                   _vocabularies!.removeAt(index);
@@ -267,8 +278,9 @@ class _LearningSessionState extends State<LearningSession> {
               });
             },
             icon: Icon(Icons.check),
-            color: Color.fromRGBO(70, 195, 120, 1)),
-        IconButton(
+            color: Color.fromRGBO(70, 195, 120, 1),
+          ),
+          IconButton(
             onPressed: () {
               Navigator.push(
                   context,
@@ -279,8 +291,9 @@ class _LearningSessionState extends State<LearningSession> {
             },
             icon: const Icon(Icons.save),
             color: Colors.grey,
-            tooltip: "Save to Topic"),
-        IconButton(
+            tooltip: "Save to Topic",
+          ),
+          IconButton(
             onPressed: () {
               setState(() {
                 cardExpanded = !cardExpanded;
@@ -288,8 +301,10 @@ class _LearningSessionState extends State<LearningSession> {
               });
             },
             icon: Icon(Icons.close),
-            color: Color.fromRGBO(220, 90, 108, 1)),
-      ]));
+            color: Color.fromRGBO(220, 90, 108, 1),
+          ),
+        ],
+      ));
     }
     if (cardExpanded) {
       return SwipableStack(
@@ -352,9 +367,9 @@ class _LearningSessionState extends State<LearningSession> {
             if (direction == SwipeDirection.right) {
               successfulVocabs++;
               _vocabularies!.removeAt(index);
-              if (_vocabularies!.length == 0) {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => const Home()));
+              if (_vocabularies!.isEmpty) {
+                Navigator.push(
+                    context, MaterialPageRoute(builder: (context) => const Home()));
               } else {
                 setState(() {
                   index = Random().nextInt(_vocabularies!.length);
@@ -380,32 +395,28 @@ class _LearningSessionState extends State<LearningSession> {
             }
           });
         },
-        detectableSwipeDirections: const {
-          SwipeDirection.right,
-          SwipeDirection.left,
-          SwipeDirection.down,
-        },
       );
-    } else {
-      return InkWell(
+    }
+    return Card(
+      elevation: 1.0,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20.0),
+        side: BorderSide(color: appPrimaryColor, width: 2.0),
+      ),
+      child: InkWell(
         onTap: () {
           setState(() {
+            index = index;
+            _vocabularies = _vocabularies!;
             cardExpanded = !cardExpanded;
           });
         },
-        child: Card(
-          elevation: 1.0,
-          clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0),
-            side: BorderSide(color: appPrimaryColor, width: 2.0),
-          ),
-          child: Column(
-            children: children,
-          ),
+        child: Column(
+          children: children,
         ),
-      );
-    }
+      ),
+    );
   }
 }
 
