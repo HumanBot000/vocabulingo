@@ -1,11 +1,11 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:vocabulingo/learningSession.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:hive/hive.dart';
-
 import 'package:vocabulingo/main.dart';
 import 'package:vocabulingo/src/configuration.dart';
 import 'package:vocabulingo/src/icons/my_flutter_app_icons.dart' as CustomIcons;
@@ -42,7 +42,7 @@ bool vocabIsInTopic(String topicName, String vocabulary) {
   var box = Hive.box('topics');
   List<dynamic> topicData = box.get(topicName);
   for (dynamic item in topicData) {
-    if (item.toString() == [vocabulary].toString()) {
+    if (item.toString() == vocabulary.toString() || item.toString() == [vocabulary].toString()) {
       return true;
     }
   }
@@ -98,6 +98,30 @@ void addVocabulariesToTopic(String topicName, List<String>? vocabularies) {
     box.delete(topicName);
     box.put(topicName, list);
   }
+}
+Future<void> autoAddAllVocabulariesToTopic() async {
+  var response = await httpCacheManager("vocabularies", "get_vocabularies",
+      formatAsJson: false);
+  if (response == null || response.isEmpty) {//todo show error
+    return;
+  }
+  List<dynamic> fetchedVocabularies = json.decode(
+      response.replaceAll("True", "true").replaceAll("False", "false"));
+  for (var vocab in fetchedVocabularies) {
+    if (!vocab.containsKey("related_skills")) {
+      continue;
+    }
+    for (var topic in vocab["related_skills"]) {
+      if (!topicExists(topic)) {
+        addTopic(topic,
+            iconDataList[Random().nextInt(iconDataList.length)].codePoint);
+      }
+      if (!vocabIsInTopic(topic, vocab["text"])) {
+        addVocabulariesToTopic(topic, [vocab["text"]]);
+      }
+    }
+  }
+
 }
 
 Future<List<Widget>> getOfficialTopicButtons() async {
@@ -363,7 +387,18 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                           ),
                           const Icon(Icons.copyright),
                         ],
-                      ),
+                        ),
+                      Row(
+                        children: [
+                          ElevatedButton(
+                            child: const Text("Auto-Add Vocabularies to topic"),
+                            onPressed: () {
+                              autoAddAllVocabulariesToTopic();
+                            },
+                          ),
+                          const Icon(Icons.add),
+                        ],
+                      )
                     ],
                   ),
               ],

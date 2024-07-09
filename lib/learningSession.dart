@@ -183,11 +183,6 @@ class _LearningSessionState extends State<LearningSession> {
         }
       }
     }
-    for (dynamic vocab in _vocabularies!) {
-      if (vocab["text"] != "a"){
-        tempVocabularies.remove(vocab);
-      }
-    }
     _vocabularies = tempVocabularies;
     if (allVocabs == 0) {
       allVocabs = tempVocabularies.length;
