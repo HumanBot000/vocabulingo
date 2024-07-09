@@ -13,7 +13,6 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:vocabulingo/src/configuration.dart';
 import 'package:vocabulingo/home.dart';
-import 'package:vocabulingo/src/configuration.dart';
 class DuolingoLogin extends StatefulWidget {
   DuolingoLogin({super.key});
 
@@ -38,9 +37,10 @@ Future<dynamic> httpCacheManager(String cacheKey, String urlEndpoint,
   var jwt = readHive("jwt");
   var language = readHive("activeLanguage");
   final cacheManager = DefaultCacheManager();
+  if (appIsInDebugState()){
+    await cacheManager.removeFile(cacheKey);
+  }
 
-  // Entfernen für Debug-Zwecke
-  // await cacheManager.removeFile(cacheKey);
 
   if ((deletionProbability == 0 ||
       Random().nextInt(deletionProbability) == 1) &&

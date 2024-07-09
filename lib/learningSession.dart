@@ -183,6 +183,11 @@ class _LearningSessionState extends State<LearningSession> {
         }
       }
     }
+    for (dynamic vocab in _vocabularies!) {
+      if (vocab["text"] != "a"){
+        tempVocabularies.remove(vocab);
+      }
+    }
     _vocabularies = tempVocabularies;
     if (allVocabs == 0) {
       allVocabs = tempVocabularies.length;
@@ -253,9 +258,12 @@ class _LearningSessionState extends State<LearningSession> {
           title: Text(translations.join(",")),
         ),
       );
-      if (vocab.containsKey("related_words")) {
+      if (vocab.containsKey("related_skills")) {
+        List<dynamic>  relatedSkills = vocab["related_skills"];
+        String relatedSkillsString = relatedSkills.join(",");
+        print(vocab);
         children.add(ListTile(
-          title: Text("Word category: ${vocab['related_words']["title"]}"),
+          title: Text("Word category: $relatedSkillsString",),
         ));
 
       }
@@ -283,9 +291,6 @@ class _LearningSessionState extends State<LearningSession> {
           IconButton(
             onPressed: () {
               var _categoryName = null;
-              if (vocab.containsKey("related_words")) {
-                _categoryName = vocab["related_words"]["title"];
-              }
               Navigator.push(
                   context,
                   MaterialPageRoute(
