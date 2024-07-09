@@ -14,7 +14,7 @@ AppBar defaultAppBar() {
   );
 }
 bool appIsInDebugState(){
-  return true;
+  return false;
 }
 String backendAddress() {
   if (appIsInDebugState()){
