@@ -12,6 +12,7 @@ import 'package:vocabulingo/src/icons/my_flutter_app_icons.dart' as CustomIcons;
 import 'package:http/http.dart' as http;
 import 'package:vocabulingo/duolingoLogin.dart';
 import 'package:vocabulingo/information/copyright.dart';
+import 'package:vocabulingo/learningSession.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -42,7 +43,8 @@ bool vocabIsInTopic(String topicName, String vocabulary) {
   var box = Hive.box('topics');
   List<dynamic> topicData = box.get(topicName);
   for (dynamic item in topicData) {
-    if (item.toString() == vocabulary.toString() || item.toString() == [vocabulary].toString()) {
+    if (item.toString() == vocabulary.toString() ||
+        item.toString() == [vocabulary].toString()) {
       return true;
     }
   }
@@ -99,14 +101,16 @@ void addVocabulariesToTopic(String topicName, List<String>? vocabularies) {
     box.put(topicName, list);
   }
 }
+
 Future<void> autoAddAllVocabulariesToTopic() async {
   var response = await httpCacheManager("vocabularies", "get_vocabularies",
       formatAsJson: false);
-  if (response == null || response.isEmpty) {//todo show error
+  if (response == null || response.isEmpty) {
+    //todo show error
     return;
   }
-  List<dynamic> fetchedVocabularies = json.decode(
-      response.replaceAll("True", "true").replaceAll("False", "false"));
+  List<dynamic> fetchedVocabularies = json
+      .decode(response.replaceAll("True", "true").replaceAll("False", "false"));
   for (var vocab in fetchedVocabularies) {
     if (!vocab.containsKey("related_skills")) {
       continue;
@@ -121,7 +125,6 @@ Future<void> autoAddAllVocabulariesToTopic() async {
       }
     }
   }
-
 }
 
 Future<List<Widget>> getOfficialTopicButtons() async {
@@ -154,6 +157,7 @@ Future<List<Widget>> getOfficialTopicButtons() async {
 
 class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   int currentPageIndex = 0;
+  late TabController tabController;
 
   Future<Widget> _infoBar() async {
     bool isConnected = await checkBackendConnection();
@@ -178,42 +182,44 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     var dailyXP = dailyXPRequest["xp_today"].toString();
     var lessonsToday = dailyXPRequest["lessons_today"].length.toString();
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        Column(
-          children: [
-            Row(
-              children: [
-                Text("$xp XP"),
-                const Icon(Icons.leaderboard),
-              ],
-            ),
-            Row(
-              children: [
-                Text("XP today: $dailyXP"),
-                Icon(Icons.emoji_events, color: Colors.yellow.shade300),
-              ],
-            ),
-          ],
-        ),
-        Column(
-          children: [
-            Row(
-              children: [
-                Text("Streak: $streak"),
-                const Icon(Icons.local_fire_department_rounded,
-                    color: Colors.orange),
-              ],
-            ),
-            Row(
-              children: [
-                Text("Lessons today: $lessonsToday"),
-              ],
-            ),
-          ],
-        ),
-      ],
+    return Expanded(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          Column(
+            children: [
+              Row(
+                children: [
+                  Text("$xp XP"),
+                  const Icon(Icons.leaderboard),
+                ],
+              ),
+              Row(
+                children: [
+                  Text("XP today: $dailyXP"),
+                  Icon(Icons.emoji_events, color: Colors.yellow.shade300),
+                ],
+              ),
+            ],
+          ),
+          Column(
+            children: [
+              Row(
+                children: [
+                  Text("Streak: $streak"),
+                  const Icon(Icons.local_fire_department_rounded,
+                      color: Colors.orange),
+                ],
+              ),
+              Row(
+                children: [
+                  Text("Lessons today: $lessonsToday"),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -236,7 +242,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                         builder: (context) => LearningSession(
                             topic: topic,
                             vocabularies: const [],
-                            correctVocabularies: -1,
+                            correctVocabulariesCount: -1,
                             index: -1),
                       ));
                 });
@@ -249,6 +255,49 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       children.add(const Divider());
     }
     return children;
+  }
+
+  @override
+  void initState() {
+    print("init");
+    super.initState();
+    checkResumeSession();
+  }
+
+  void checkResumeSession() async {
+    if (await sessionIsResumeable()) {
+      var _sessionData = await sessionResumeData();
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Resume your last session? (${_sessionData["topic"]})"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => LearningSession(
+                              topic: _sessionData["topic"],
+                              vocabularies:
+                                  _sessionData["remainingVocabularies"],
+                              correctVocabulariesCount:
+                                  _sessionData["correctVocabularies"],
+                              index: _sessionData["index"],
+                            )));
+              },
+              child: const Text("Yes"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("No"),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   @override
@@ -387,7 +436,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                           ),
                           const Icon(Icons.copyright),
                         ],
-                        ),
+                      ),
                       Row(
                         children: [
                           ElevatedButton(
@@ -397,6 +446,54 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                             },
                           ),
                           const Icon(Icons.add),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          ElevatedButton(
+                              onPressed: () async {
+                                if(!await sessionIsResumeable()){
+                                  showDialog(context: context, builder: (context) => AlertDialog(
+                                    title: const Text("There is no Session to resume"),
+                                  ));
+                                }
+                                else{
+                                  var _sessionData = await sessionResumeData();
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: Text("Resume your last session? (${_sessionData["topic"]})"),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                    builder: (context) => LearningSession(
+                                                      topic: _sessionData["topic"],
+                                                      vocabularies:
+                                                      _sessionData["remainingVocabularies"],
+                                                      correctVocabulariesCount:
+                                                      _sessionData["correctVocabularies"],
+                                                      index: _sessionData["index"],
+                                                    )));
+                                          },
+                                          child: const Text("Yes"),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                          child: const Text("No"),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }
+                              },
+                              child:
+                                  const Text("Resume my las Learning Session")),
+                          const Icon(Icons.play_arrow),
                         ],
                       )
                     ],
