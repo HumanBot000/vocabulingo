@@ -16,7 +16,6 @@ import 'package:swipable_stack/swipable_stack.dart';
 import 'dart:math' as math;
 import 'package:just_audio/just_audio.dart';
 
-
 Widget getSourceLanguageSVGPath({double width = 20.0, double height = 20.0}) {
   var language = readHive("sourceLanguage");
   List<String> supportedLanguages = [
@@ -106,44 +105,82 @@ Widget getActiveLanguageSVGPath({double width = 20.0, double height = 20.0}) {
     width: height,
   );
 }
+
 class LearningSession extends StatefulWidget {
   const LearningSession(
       {Key? key,
-        required this.topic,
-        required this.vocabularies,
-        required this.correctVocabulariesCount,
-        required this.index})
+      required this.topic,
+      required this.vocabularies,
+      required this.correctVocabulariesCount,
+      required this.index})
       : super(key: key);
 
   final String topic;
   final List<dynamic> vocabularies;
   final int correctVocabulariesCount;
   final int index;
+
   @override
   State<LearningSession> createState() => _LearningSessionState();
 }
 
-Future<void> updateSessionResumeStorage(String topic,List<dynamic> remainingVocabularies,int correctVocabularies,int index) async {
+Future<void> addCustomVocabularyToTopic(
+    String topic, String vocabulary, String translation) async {
+  var box = await Hive.openBox("customVocabularies");
+  String contentJson = box.get(topic, defaultValue: '[]');
+  List<dynamic> contentDynamic = json.decode(contentJson) as List<dynamic>;
+  List<Map<String, String>> content = contentDynamic
+      .map((item) => Map<String, String>.from(item as Map<String, dynamic>))
+      .toList();
+  content.add({"vocabulary": vocabulary, "translation": translation});
+  String updatedContentJson = json.encode(content);
+  await box.put(topic, updatedContentJson);
+}
+
+Future<List<Map<String, String>>> getAllCustomVocabulariesFromTopic(
+    String topic) async {
+  var box = await Hive.openBox("customVocabularies");
+  String contentJson = box.get(topic, defaultValue: '[]');
+  List<dynamic> contentDynamic = json.decode(contentJson) as List<dynamic>;
+  List<Map<String, String>> content = contentDynamic
+      .map((item) => Map<String, String>.from(item as Map<String, dynamic>))
+      .toList();
+  return content;
+}
+
+Future<void> updateSessionResumeStorage(
+    String topic,
+    List<dynamic> remainingVocabularies,
+    int correctVocabularies,
+    int index) async {
   var box = await Hive.openBox("sessionResume");
   box.put("topic", topic);
   box.put("remainingVocabularies", remainingVocabularies);
   box.put("correctVocabularies", correctVocabularies);
   box.put("index", index);
 }
+
 Future<bool> sessionIsResumeable() async {
   var box = await Hive.openBox("sessionResume");
   return box.get("topic") != null;
 }
+
 Future<Map> sessionResumeData() async {
   var box = await Hive.openBox("sessionResume");
-  return {"topic":await box.get("topic"),"remainingVocabularies":await box.get("remainingVocabularies"),"correctVocabularies":await box.get("correctVocabularies"),"index":await box.get("index")};
+  return {
+    "topic": await box.get("topic"),
+    "remainingVocabularies": await box.get("remainingVocabularies"),
+    "correctVocabularies": await box.get("correctVocabularies"),
+    "index": await box.get("index")
+  };
 }
+
 class _LearningSessionState extends State<LearningSession> {
   List<dynamic>? _vocabularies;
   int index = 0;
   bool cardExpanded = false;
   int allVocabs = 0;
-  int successfulVocabs = 0;
+  int successfulVocabs = 1;
   final audioPlayer = AudioPlayer();
 
   @override
@@ -200,20 +237,40 @@ class _LearningSessionState extends State<LearningSession> {
         }
       }
     }
-    _vocabularies = tempVocabularies;
-    if (allVocabs == 0) {
-      allVocabs = tempVocabularies.length;
-    }
 
-    if (tempVocabularies.isNotEmpty) {
-      if (index >= 0 && index < _vocabularies!.length) {
-        return vocabCard(_vocabularies![index]);
-      } else {
-        return Container();
-      }
-    } else {
-      return Container();
-    }
+    return FutureBuilder(
+      future: getAllCustomVocabulariesFromTopic(topic),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return CircularProgressIndicator(); // or any loading indicator
+        } else if (snapshot.hasError) {
+          return Text('Error: ${snapshot.error}');
+        } else {
+          // Combine existing and custom vocabularies
+          List<dynamic> customVocabularies = snapshot.data ?? [];
+          for (dynamic vocab in customVocabularies) {
+            tempVocabularies.add({
+              "text": vocab["vocabulary"],
+              "translations": [vocab["translation"]]
+            });
+          }
+          _vocabularies = tempVocabularies;
+          _vocabularies!.shuffle();
+          if (allVocabs == 0) {
+            allVocabs = tempVocabularies.length;
+          }
+          if (tempVocabularies.isNotEmpty) {
+            if (index >= 0 && index < _vocabularies!.length) {
+              return vocabCard(_vocabularies![index]);
+            } else {
+              return Container();
+            }
+          } else {
+            return Container();
+          }
+        }
+      },
+    );
   }
 
   Widget vocabCard(dynamic vocab) {
@@ -241,8 +298,10 @@ class _LearningSessionState extends State<LearningSession> {
               Text(vocab["text"]),
               IconButton(
                 onPressed: () {
-                  audioPlayer.setUrl(vocab["audioURL"]);
-                  audioPlayer.play();
+                  if (vocab["audioURL"] != null) {
+                    audioPlayer.setUrl(vocab["audioURL"]);
+                    audioPlayer.play();
+                  }
                 },
                 icon: Icon(Icons.play_arrow_rounded),
                 color: Color.fromRGBO(41, 59, 51, 1.0),
@@ -271,12 +330,13 @@ class _LearningSessionState extends State<LearningSession> {
         ),
       );
       if (vocab.containsKey("related_skills")) {
-        List<dynamic>  relatedSkills = vocab["related_skills"];
+        List<dynamic> relatedSkills = vocab["related_skills"];
         String relatedSkillsString = relatedSkills.join(",");
         children.add(ListTile(
-          title: Text("Word category: $relatedSkillsString",),
+          title: Text(
+            "Word category: $relatedSkillsString",
+          ),
         ));
-
       }
 
       children.add(ButtonBar(
@@ -286,8 +346,8 @@ class _LearningSessionState extends State<LearningSession> {
             onPressed: () {
               setState(() {
                 if (_vocabularies!.length == 1) {
-                  Navigator.push(
-                      context, MaterialPageRoute(builder: (context) => const Home()));
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => const Home()));
                 } else {
                   successfulVocabs++;
                   _vocabularies!.removeAt(index);
@@ -305,8 +365,9 @@ class _LearningSessionState extends State<LearningSession> {
               Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                        AddTopic(vocabulary: [vocab["text"].toString()], name: _categoryName),
+                    builder: (context) => AddTopic(
+                        vocabulary: [vocab["text"].toString()],
+                        name: _categoryName),
                   ));
             },
             icon: const Icon(Icons.save),
@@ -388,11 +449,12 @@ class _LearningSessionState extends State<LearningSession> {
               successfulVocabs++;
               _vocabularies!.removeAt(index);
               if (_vocabularies!.isEmpty) {
-                Navigator.push(
-                    context, MaterialPageRoute(builder: (context) => const Home()));
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => const Home()));
               } else {
                 var nedIndex = Random().nextInt(_vocabularies!.length);
-                updateSessionResumeStorage(widget.topic, _vocabularies!, successfulVocabs,nedIndex);
+                updateSessionResumeStorage(
+                    widget.topic, _vocabularies!, successfulVocabs, nedIndex);
                 setState(() {
                   index = nedIndex;
                   cardExpanded = !cardExpanded;

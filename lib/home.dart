@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
+import 'package:vocabulingo/addCustomVocabulary.dart';
+import 'package:vocabulingo/addTopic.dart';
 import 'package:vocabulingo/learningSession.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -259,7 +261,6 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
 
   @override
   void initState() {
-    print("init");
     super.initState();
     checkResumeSession();
   }
@@ -303,6 +304,46 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    if (currentPageIndex == 1) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        showModalBottomSheet<void>(
+          context: context,
+          builder: (BuildContext context) {
+            return SizedBox(
+              height: 200,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    ElevatedButton(
+                      child: const Text('Add a new Topic'),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AddTopic(
+                              vocabulary: [], showCreated: false),
+                        ),
+                      ),
+                    ),
+                    ElevatedButton(
+                      child: const Text('Add a Vocabulary to a Topic'),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AddCustomVocabulary(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      });
+    }
+
     return Scaffold(
       appBar: defaultAppBar(),
       bottomNavigationBar: NavigationBar(
@@ -313,17 +354,22 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         },
         indicatorColor: Colors.amber,
         selectedIndex: currentPageIndex,
-        destinations: const <Widget>[
-          NavigationDestination(
-            selectedIcon: Icon(CustomIcons.MyFlutterApp.book_open),
+        destinations: <Widget>[
+          const NavigationDestination(
             icon: Icon(CustomIcons.MyFlutterApp.book_open),
             label: 'Vocabularies',
           ),
           NavigationDestination(
-            icon: Badge(child: Icon(Icons.notifications_sharp)),
-            label: 'Something other',
+            icon: Badge(
+              child: Icon(
+                Icons.add,
+                size: 40,
+                color: Colors.greenAccent.shade200,
+              ),
+            ),
+            label: 'Add Vocabularies',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Badge(
               child: Icon(Icons.settings),
             ),
@@ -373,129 +419,33 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                     physics: const NeverScrollableScrollPhysics(),
                     children: getTopicButtons(context),
                   ),
-                if (currentPageIndex == 1)
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    reverse: true,
-                    itemCount: 2,
-                    itemBuilder: (BuildContext context, int index) {
-                      if (index == 0) {
-                        return Align(
-                          alignment: Alignment.centerRight,
-                          child: Container(
-                            margin: const EdgeInsets.all(8.0),
-                            padding: const EdgeInsets.all(8.0),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.primary,
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                            child: Text(
-                              'Hello',
-                              style: theme.textTheme.bodyLarge!
-                                  .copyWith(color: theme.colorScheme.onPrimary),
-                            ),
-                          ),
-                        );
-                      }
-                      return Align(
-                        alignment: Alignment.centerLeft,
-                        child: Container(
-                          margin: const EdgeInsets.all(8.0),
-                          padding: const EdgeInsets.all(8.0),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary,
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          child: Text(
-                            'Hi!',
-                            style: theme.textTheme.bodyLarge!
-                                .copyWith(color: theme.colorScheme.onPrimary),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                if (currentPageIndex == 1) const SizedBox(),
+                // Empty placeholder to ensure the bottom sheet is shown
                 if (currentPageIndex == 2)
                   ListView(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     children: [
-                      Row(
-                        children: [
-                          ElevatedButton(
-                            child: const Text("Copyright"),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const Copyright(),
-                                ),
-                              );
-                            },
-                          ),
-                          const Icon(Icons.copyright),
-                        ],
+                      buildSettingsButtonRow(
+                        context: context,
+                        label: "Copyright",
+                        icon: Icons.copyright,
+                        destination: const Copyright(),
                       ),
-                      Row(
-                        children: [
-                          ElevatedButton(
-                            child: const Text("Auto-Add Vocabularies to topic"),
-                            onPressed: () {
-                              autoAddAllVocabulariesToTopic();
-                            },
-                          ),
-                          const Icon(Icons.add),
-                        ],
+                      buildSettingsButtonRow(
+                        context: context,
+                        label: "Auto-Add Vocabularies to topic",
+                        icon: Icons.add,
+                        onPressed: autoAddAllVocabulariesToTopic,
                       ),
-                      Row(
-                        children: [
-                          ElevatedButton(
-                              onPressed: () async {
-                                if(!await sessionIsResumeable()){
-                                  showDialog(context: context, builder: (context) => AlertDialog(
-                                    title: const Text("There is no Session to resume"),
-                                  ));
-                                }
-                                else{
-                                  var _sessionData = await sessionResumeData();
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: Text("Resume your last session? (${_sessionData["topic"]})"),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (context) => LearningSession(
-                                                      topic: _sessionData["topic"],
-                                                      vocabularies:
-                                                      _sessionData["remainingVocabularies"],
-                                                      correctVocabulariesCount:
-                                                      _sessionData["correctVocabularies"],
-                                                      index: _sessionData["index"],
-                                                    )));
-                                          },
-                                          child: const Text("Yes"),
-                                        ),
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                          },
-                                          child: const Text("No"),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }
-                              },
-                              child:
-                                  const Text("Resume my las Learning Session")),
-                          const Icon(Icons.play_arrow),
-                        ],
-                      )
+                      buildSettingsButtonRow(
+                        context: context,
+                        label: "Resume my last Learning Session",
+                        icon: Icons.play_arrow,
+                        onPressed: () async {
+                          await handleResumeSession(context);
+                        },
+                      ),
                     ],
                   ),
               ],
@@ -505,13 +455,80 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       ),
     );
   }
+
+  Widget buildSettingsButtonRow({
+    required BuildContext context,
+    required String label,
+    required IconData icon,
+    Widget? destination,
+    VoidCallback? onPressed,
+  }) {
+    return Row(
+      children: [
+        ElevatedButton(
+          child: Text(label),
+          onPressed: onPressed ??
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => destination!),
+                );
+              },
+        ),
+        Icon(icon),
+      ],
+    );
+  }
+
+  Future<void> handleResumeSession(BuildContext context) async {
+    if (!await sessionIsResumeable()) {
+      showDialog(
+          context: context,
+          builder: (context) => const AlertDialog(
+                title: Text("There is no Session to resume"),
+              ));
+    } else {
+      var sessionData = await sessionResumeData();
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Resume your last session? (${sessionData["topic"]})"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => LearningSession(
+                              topic: sessionData["topic"],
+                              vocabularies:
+                                  sessionData["remainingVocabularies"],
+                              correctVocabulariesCount:
+                                  sessionData["correctVocabularies"],
+                              index: sessionData["index"],
+                            )));
+              },
+              child: const Text("Yes"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("No"),
+            ),
+          ],
+        ),
+      );
+    }
+  }
 }
 
 class Badge extends StatelessWidget {
   final Widget child;
   final Widget? label;
+  final int radius;
 
-  const Badge({required this.child, this.label});
+  const Badge({super.key, required this.child, this.label, this.radius = 10});
 
   @override
   Widget build(BuildContext context) {
@@ -523,7 +540,7 @@ class Badge extends StatelessWidget {
           Positioned(
             right: 0,
             child: CircleAvatar(
-              radius: 10,
+              radius: radius.toDouble(),
               child: label,
             ),
           ),

@@ -7,6 +7,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:vocabulingo/home.dart';
+import 'package:vocabulingo/learningSession.dart';
 import 'package:vocabulingo/main.dart';
 import 'package:vocabulingo/src/configuration.dart';
 import 'package:vocabulingo/src/icons/my_flutter_app_icons.dart' as CustomIcons;
@@ -14,7 +15,14 @@ import 'package:http/http.dart' as http;
 import 'dart:math' as math;
 
 class AddTopic extends StatefulWidget {
-  const AddTopic({Key? key, required this.vocabulary, this.name})
+  final bool showCreated;
+  final String? translation;
+  const AddTopic(
+      {Key? key,
+      required this.vocabulary,
+      this.name,
+      this.showCreated = true,
+      this.translation})
       : super(key: key);
 
   final List<String> vocabulary;
@@ -25,7 +33,6 @@ class AddTopic extends StatefulWidget {
 }
 
 class _AddTopicState extends State<AddTopic> {
-
   late TextEditingController textFieldController;
   late IconData currentSelectedIcon;
 
@@ -42,60 +49,72 @@ class _AddTopicState extends State<AddTopic> {
 
   List<Widget> _getTopicButtons() {
     List<Widget> children = [];
-    for (String topic in getAllTopics()) {
-      children.add(Row(
-        children: [
-          Expanded(
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.greenAccent.shade700),
-              onPressed: () {
-                setState(() {
-                  if (vocabIsInTopic(
-                      topic,
-                      widget.vocabulary.toString().substring(
-                          1, widget.vocabulary
-                          .toString()
-                          .length - 1))) {
-                    showDialog(
-                        context: context,
-                        builder: (context) =>
-                            AlertDialog(
-                                title: const Text(
-                                    "This vocabulary is already in this topic"),
-                                content: const Text(
-                                    "Do you want to remove it from that topic?"),
-                                actions: [
-                                  ElevatedButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: const Text("Cancel")),
-                                  ElevatedButton(
-                                      onPressed: () {
-                                        removeVocabulariesFromTopic(topic,
-                                            [widget.vocabulary.toString()]);
-                                        if (topicIsEmpty(topic)) {
-                                          deleteTopic(topic);
-                                        }
-                                        Navigator.pop(context);
-                                        Navigator.pop(context);
-                                      },
-                                      child: const Text("Remove")),
-                                ]));
-                  } else {
-                    addVocabulariesToTopic(
-                        topic, [widget.vocabulary.toString()]);
-                    Navigator.pop(context);
-                  }
-                });
-              },
-              child: Text(topic,
-                  style: TextStyle(color: Colors.black, fontSize: 20)),
+    if (widget.showCreated) {
+      for (String topic in getAllTopics()) {
+        children.add(Row(
+          children: [
+            Expanded(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.greenAccent.shade700),
+                onPressed: () {
+                  setState(() {
+                    if (vocabIsInTopic(
+                        topic,
+                        widget.vocabulary.toString().substring(
+                            1, widget.vocabulary.toString().length - 1))) {
+                      showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                                  title: const Text(
+                                      "This vocabulary is already in this topic"),
+                                  content: const Text(
+                                      "Do you want to remove it from that topic?"),
+                                  actions: [
+                                    ElevatedButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text("Cancel")),
+                                    ElevatedButton(
+                                        onPressed: () {
+                                          removeVocabulariesFromTopic(topic,
+                                              [widget.vocabulary.toString()]);
+                                          if (topicIsEmpty(topic)) {
+                                            deleteTopic(topic);
+                                          }
+                                          Navigator.pop(context);
+                                          Navigator.pop(context);
+                                        },
+                                        child: const Text("Remove")),
+                                  ]));
+                    } else {
+                      if (widget.translation == null) {
+                        addVocabulariesToTopic(
+                            topic, [widget.vocabulary.toString()]);
+                        Navigator.pop(context);
+                      } else {
+                        addCustomVocabularyToTopic(topic, widget.vocabulary[0],
+                            widget.translation.toString());
+                        if (topic != "All") {
+                          addCustomVocabularyToTopic(
+                              "All",
+                              widget.vocabulary[0],
+                              widget.translation.toString());
+                        }
+                        Navigator.pop(context);
+                        Navigator.pop(context);
+                      }
+                    }
+                  });
+                },
+                child: Text(topic,
+                    style: TextStyle(color: Colors.black, fontSize: 20)),
+              ),
             ),
-          ),
-          getTopicIcon(topic),
-          const Divider()
-        ],
-      ));
+            getTopicIcon(topic),
+            const Divider()
+          ],
+        ));
+      }
     }
     children.add(Container(
       padding: const EdgeInsets.all(50.0),
@@ -141,34 +160,60 @@ class _AddTopicState extends State<AddTopic> {
           if (topicExists(textFieldController.text)) {
             showDialog(
                 context: context,
-                builder: (context) =>
-                    AlertDialog(
+                builder: (context) => AlertDialog(
                         title: const Text("Error"),
                         content: const Text("Topic already exists"),
                         actions: [
                           ElevatedButton(
                               onPressed: () => Navigator.pop(context),
                               child: const Text("Ok")),
-                          ElevatedButton(onPressed: () {
-                            addVocabulariesToTopic(
-                                textFieldController.text, [widget.vocabulary
-                                .toString()
-                            ]);
-                            Navigator.pop(context);
-                            Navigator.pop(context);
-                          }, child: const Text("Add to Topic"))
+                          ElevatedButton(
+                              onPressed: () {
+                                if (widget.translation == null) {
+                                  addVocabulariesToTopic(
+                                      textFieldController.text,
+                                      [widget.vocabulary.toString()]);
+                                  Navigator.pop(context);
+                                  Navigator.pop(context);
+                                } else {
+                                  addCustomVocabularyToTopic(
+                                      textFieldController.text,
+                                      widget.vocabulary[0],
+                                      widget.translation.toString());
+                                  if (textFieldController.text != "All") {
+                                    addCustomVocabularyToTopic(
+                                        "All",
+                                        widget.vocabulary[0],
+                                        widget.translation.toString());
+                                  }
+                                  Navigator.pop(context);
+                                  Navigator.pop(context);
+                                  Navigator.pop(context);
+                                }
+                              },
+                              child: const Text("Add to Topic"))
                         ]));
           } else {
-            addTopic(textFieldController.text, currentSelectedIcon.codePoint);
-            addVocabulariesToTopic(
-                textFieldController.text, [widget.vocabulary.toString()]);
-            Navigator.pop(context);
+            if (widget.translation == null) {
+              addTopic(textFieldController.text, currentSelectedIcon.codePoint);
+              addVocabulariesToTopic(
+                  textFieldController.text, [widget.vocabulary.toString()]);
+              Navigator.pop(context);
+            } else {
+              addCustomVocabularyToTopic(textFieldController.text,
+                  widget.vocabulary[0], widget.translation.toString());
+              if (textFieldController.text != "All") {
+                addCustomVocabularyToTopic(
+                    "All", widget.vocabulary[0], widget.translation.toString());
+              }
+              Navigator.pop(context);
+              Navigator.pop(context);
+            }
           }
         } else {
           showDialog(
               context: context,
-              builder: (context) =>
-                  AlertDialog(
+              builder: (context) => AlertDialog(
                       title: const Text("Error"),
                       content: const Text("Please enter a topic name"),
                       actions: [
